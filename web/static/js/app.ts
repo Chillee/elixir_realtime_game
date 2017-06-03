@@ -61,7 +61,7 @@ class App {
     var frame = 0;
     var dx = 0, dy = 0;
     x = y = xx = yy = 0;
-    var fps = 60;
+    var fps = 30;
 
     function run() {
       update();
