@@ -8,12 +8,8 @@ class App {
     socket.connect();
 
     var chan = socket.channel("rooms:lobby", {})
-    
-    chan.join().receive("ignore", () => console.log("auth error"))
-      .receive("ok", () => console.log("join ok"))
-      .after(10000, () => console.log("Connection interruption"))
-    chan.onError(e => console.log("something went wrong", e))
-    chan.onClose(e => console.log("channel closed", e))
+    console.log(chan); 
+    chan.join()
 
     var c = document.getElementById("gameCanvas");
     var ctx = c.getContext("2d");
