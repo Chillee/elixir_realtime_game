@@ -1,22 +1,20 @@
 "use strict";
-exports.__esModule = true;
-var phoenix_1 = require("phoenix");
-var App = (function () {
-    function App() {
-    }
-    App.init = function () {
-        var user_id = Math.floor(Math.random() * 10000);
-        var socket = new phoenix_1.Socket("/socket", {
+Object.defineProperty(exports, "__esModule", { value: true });
+const phoenix_1 = require("phoenix");
+class App {
+    static init() {
+        const user_id = Math.floor(Math.random() * 10000);
+        let socket = new phoenix_1.Socket("/socket", {
             params: { id: user_id }
         });
         socket.connect();
         var chan = socket.channel("rooms:lobby", {});
         console.log(chan);
-        chan.join().receive("ignore", function () { return console.log("auth error"); })
-            .receive("ok", function (x) { console.log("join ok"); console.log(x); });
-        chan.onError(function (e) { return console.log("something went wrong", e); });
-        chan.onClose(function (e) { return console.log("channel closed", e); });
-        var c = document.getElementById("gameCanvas");
+        chan.join().receive("ignore", () => console.log("auth error"))
+            .receive("ok", (x) => { console.log("join ok"); console.log(x); });
+        chan.onError(e => console.log("something went wrong", e));
+        // chan.onClose(e => console.log("channel closed", e))
+        const c = document.getElementById("gameCanvas");
         var ctx = c.getContext("2d");
         var sheet = new Image();
         sheet.src = "images/sheet.png";
@@ -146,14 +144,14 @@ var App = (function () {
                 user_id: user_id
             });
         }
-        chan.on("new:msg", function (msg) {
+        chan.on("new:msg", msg => {
             if (msg.user_id !== user_id) {
                 xx = msg.x;
                 yy = msg.y;
             }
         });
-    };
-    return App;
-}());
+    }
+}
 App.init();
-exports["default"] = App;
+exports.default = App;
+//# sourceMappingURL=app.js.map
