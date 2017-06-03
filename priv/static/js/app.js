@@ -1448,7 +1448,6 @@ var App = function () {
             });
             socket.connect();
             var chan = socket.channel("rooms:lobby", {});
-            console.log(chan);
             chan.join().receive("ignore", function () {
                 return console.log("auth error");
             }).receive("ok", function (x) {
@@ -1485,13 +1484,15 @@ var App = function () {
                 Key.onKeydown(event);
             }, false);
             var can_jump = false;
-            var x, y, xx, yy;
+            var x = 0,
+                y = 0,
+                xx = 0,
+                yy = 0;
             var x_dir = 1;
             var tick = 0;
             var frame = 0;
             var dx = 0,
                 dy = 0;
-            x = y = xx = yy = 0;
             var fps = 60;
             function run() {
                 update();
@@ -1612,7 +1613,6 @@ var App = (function () {
         });
         socket.connect();
         var chan = socket.channel("rooms:lobby", {});
-        console.log(chan);
         chan.join().receive("ignore", function () { return console.log("auth error"); })
             .receive("ok", function (x) { console.log("join ok"); console.log(x); });
         chan.onError(function (e) { return console.log("something went wrong", e); });
@@ -1644,12 +1644,11 @@ var App = (function () {
             Key.onKeydown(event);
         }, false);
         var can_jump = false;
-        var x, y, xx, yy;
+        var x = 0, y = 0, xx = 0, yy = 0;
         var x_dir = 1;
         var tick = 0;
         var frame = 0;
         var dx = 0, dy = 0;
-        x = y = xx = yy = 0;
         var fps = 60;
         function run() {
             update();

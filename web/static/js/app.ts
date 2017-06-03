@@ -14,14 +14,13 @@ class App {
     socket.connect();
 
     var chan = socket.channel("rooms:lobby", {})
-    console.log(chan);
     chan.join().receive("ignore", () => console.log("auth error"))
                .receive("ok", (x) => {console.log("join ok"); console.log(x)})
     chan.onError(e => console.log("something went wrong", e))
     // chan.onClose(e => console.log("channel closed", e))
 
     const c = <HTMLCanvasElement>document.getElementById("gameCanvas");
-    var ctx = c.getContext("2d");
+    var ctx = c.getContext("2d") as CanvasRenderingContext2D;
 
     var sheet = new Image();
     sheet.src = "images/sheet.png";
@@ -34,15 +33,15 @@ class App {
       RIGHT: 39,
       DOWN: 40,
 
-      isDown: function (keyCode) {
+      isDown: function (keyCode: number) {
         return this._pressed[keyCode];
       },
 
-      onKeydown: function (event) {
+      onKeydown: function (event: KeyboardEvent) {
         this._pressed[event.keyCode] = true;
       },
 
-      onKeyup: function (event) {
+      onKeyup: function (event: KeyboardEvent) {
         delete this._pressed[event.keyCode];
       }
     };
@@ -55,12 +54,11 @@ class App {
     }, false);
 
     var can_jump = false;
-    var x, y, xx, yy;
+    var x = 0, y = 0, xx = 0, yy = 0;
     var x_dir = 1;
     var tick = 0;
     var frame = 0;
     var dx = 0, dy = 0;
-    x = y = xx = yy = 0;
     var fps = 60;
 
     function run() {
