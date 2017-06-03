@@ -1,58 +1,100 @@
-import {Socket, LongPoller} from "phoenix"
+import { Socket, LongPoller } from "phoenix"
 
 class App {
 
-  static init(){
-    let socket = new Socket("/socket", {
-      logger: ((kind, msg, data) => { console.log(`${kind}: ${msg}`, data) })
-    })
+  static init() {
+    let socket = new Socket("/socket")
 
-    socket.connect({user_id: "123"})
-    var $status    = $("#status")
-    var $messages  = $("#messages")
-    var $input     = $("#message-input")
-    var $username  = $("#username")
-
-    socket.onOpen( ev => console.log("OPEN", ev) )
-    socket.onError( ev => console.log("ERROR", ev) )
-    socket.onClose( e => console.log("CLOSE", e))
+    socket.connect();
 
     var chan = socket.channel("rooms:lobby", {})
+    
     chan.join().receive("ignore", () => console.log("auth error"))
-               .receive("ok", () => console.log("join ok"))
-               .after(10000, () => console.log("Connection interruption"))
+      .receive("ok", () => console.log("join ok"))
+      .after(10000, () => console.log("Connection interruption"))
     chan.onError(e => console.log("something went wrong", e))
     chan.onClose(e => console.log("channel closed", e))
 
-    $input.off("keypress").on("keypress", e => {
-      if (e.keyCode == 13) {
-        chan.push("new:msg", {user: $username.val(), body: $input.val()})
-        $input.val("")
+    var c = document.getElementById("gameCanvas");
+    var ctx = c.getContext("2d");
+
+    ctx.fillRect(0, 0, 32, 32);
+
+    var Key = {
+      _pressed: {},
+
+      LEFT: 37,
+      UP: 38,
+      RIGHT: 39,
+      DOWN: 40,
+
+      isDown: function (keyCode) {
+        return this._pressed[keyCode];
+      },
+
+      onKeydown: function (event) {
+        this._pressed[event.keyCode] = true;
+      },
+
+      onKeyup: function (event) {
+        delete this._pressed[event.keyCode];
       }
-    })
+    };
+
+    window.addEventListener('keyup', function (event) { Key.onKeyup(event); }, false);
+    window.addEventListener('keydown', function (event) { Key.onKeydown(event); }, false);
+
+    var x = 0, y = 0, xx = 0, yy = 0;
+    var fps = 50;
+
+    function run() {
+      update();
+      draw();
+      push();
+    };
+
+    // Start the game loop
+    setInterval(run, 1000 / fps);
+
+    var v = 5;
+
+    function update() {
+      if (Key.isDown(Key.UP)) {
+        y -= v;
+      }
+      if (Key.isDown(Key.DOWN)) {
+        y += v;
+      }
+      if (Key.isDown(Key.LEFT)) {
+        x -= v;
+      }
+      if (Key.isDown(Key.RIGHT)) {
+        x += v;
+      }
+    }
+
+    function draw() {
+      ctx.fillStyle = 'rgb(255, 255, 255)';
+      ctx.fillRect(0, 0, 640, 480);
+      ctx.fillStyle = 'rgb(0, 0, 0)';
+      ctx.fillRect(x, y, 32, 32);
+      ctx.fillRect(xx, yy, 32, 32);
+    }
+
+    function push() {
+      chan.push("new:msg", { user: '1', x: x, y: y })
+    }
 
     chan.on("new:msg", msg => {
-      $messages.append(this.messageTemplate(msg))
-      scrollTo(0, document.body.scrollHeight)
+      if(msg.x != x || msg.y != y) {
+        xx = msg.x;
+        yy = msg.y;
+      }
     })
-
-    chan.on("user:entered", msg => {
-      var username = this.sanitize(msg.user || "anonymous")
-      $messages.append(`<br/><i>[${username} entered]</i>`)
-    })
-  }
-
-  static sanitize(html){ return $("<div/>").text(html).html() }
-
-  static messageTemplate(msg){
-    let username = this.sanitize(msg.user || "anonymous")
-    let body     = this.sanitize(msg.body)
-
-    return(`<p><a href='#'>[${username}]</a>&nbsp; ${body}</p>`)
   }
 
 }
 
-$( () => App.init() )
+$(() => App.init())
 
 export default App
