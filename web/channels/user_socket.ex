@@ -6,9 +6,11 @@ defmodule Chat.UserSocket do
   transport :websocket, Phoenix.Transports.WebSocket
   transport :longpoll, Phoenix.Transports.LongPoll
 
-  def connect(_params, socket) do
-    {:ok, socket}
+  def connect(params, socket) do
+    {:ok, assign(socket, :user_id, params["id"])}
   end
 
-  def id(_socket), do: nil
+  def id(socket) do
+    "#{socket.assigns.user_id}"
+  end
 end

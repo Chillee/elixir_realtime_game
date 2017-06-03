@@ -1,15 +1,24 @@
-import { Socket, LongPoller } from "phoenix"
+import {
+  Socket,
+  LongPoller
+} from "phoenix"
 
 class App {
 
   static init() {
-    let socket = new Socket("/socket")
+    let user_id = Math.floor(Math.random()*10000);
+    let socket = new Socket("/socket", {
+      params: {id: user_id}
+    })
 
     socket.connect();
 
     var chan = socket.channel("rooms:lobby", {})
-    console.log(chan); 
-    chan.join()
+    console.log(chan);
+    chan.join().receive("ignore", () => console.log("auth error"))
+               .receive("ok", (x) => {console.log("join ok"); console.log(x)})
+    chan.onError(e => console.log("something went wrong", e))
+    chan.onClose(e => console.log("channel closed", e))
 
     var c = document.getElementById("gameCanvas");
     var ctx = c.getContext("2d");
@@ -37,10 +46,17 @@ class App {
       }
     };
 
-    window.addEventListener('keyup', function (event) { Key.onKeyup(event); }, false);
-    window.addEventListener('keydown', function (event) { Key.onKeydown(event); }, false);
+    window.addEventListener('keyup', function (event) {
+      Key.onKeyup(event);
+    }, false);
+    window.addEventListener('keydown', function (event) {
+      Key.onKeydown(event);
+    }, false);
 
-    var x = 0, y = 0, xx = 0, yy = 0;
+    var x = 0,
+      y = 0,
+      xx = 0,
+      yy = 0;
     var fps = 50;
 
     function run() {
@@ -78,11 +94,16 @@ class App {
     }
 
     function push() {
-      chan.push("new:msg", { user: '1', x: x, y: y })
+      chan.push("new:msg", {
+        user: '1',
+        x: x,
+        y: y,
+        user_id: user_id
+      })
     }
 
     chan.on("new:msg", msg => {
-      if(msg.x != x || msg.y != y) {
+      if (msg.user_id !== user_id) {
         xx = msg.x;
         yy = msg.y;
       }
