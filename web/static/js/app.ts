@@ -1,29 +1,92 @@
 "use strict";
 import {
-  Socket
+  Socket, Channel
 } from "phoenix"
 
-class App {
+class GameState {
+  x = 0;
+  y = 0;
+  xx = 0;
+  yy = 0;
+  can_jump = false;
+  x_dir = 1;
+  tick = 0;
+  frame = 0;
+  dx = 0;
+  dy = 0;
+  fps = 60;
+}
 
-  public static init() {
-    const user_id = Math.floor(Math.random()*10000);
-    let socket = new Socket("/socket", {
-      params: {id: user_id}
-    })
+class Game {
+  canvas: HTMLCanvasElement;
+  spriteSheet: HTMLImageElement;
+  state: GameState;
 
-    socket.connect();
+  constructor() {
+    this.canvas = <HTMLCanvasElement>document.getElementById("gameCanvas");
+    this.spriteSheet = new Image();
+    this.spriteSheet.src = "images/sheet.png";
+    this.state = new GameState();
+  }
 
-    const chan = socket.channel("rooms:lobby", {})
-    chan.join().receive("ignore", () => console.log("auth error"))
-               .receive("ok", () => {console.log("join ok")})
-    chan.onError(e => console.log("something went wrong", e))
-    // chan.onClose(e => console.log("channel closed", e))
+  run(roomChan: Channel, user_id: number) {
+    const collisions = () => {
+      const gs = this.state;
+      function colliding() {
+        if (gs.x >= gs.xx + 32 || gs.x + 32 <= gs.xx) return false;
+        if (gs.y >= gs.yy + 32 || gs.y + 32 <= gs.yy) return false;
+        return true;
+      }
+      gs.y += gs.dy;
+      if (colliding()) {
+        gs.y -= gs.dy;
+        if (!colliding()) {
+          gs.y += gs.dy;
+          if (gs.dy > 0) {
+            gs.dy = 0;
+            gs.can_jump = true;
+            gs.y = gs.yy - 32;
+          }
+          else {
+            gs.y = gs.yy + 32;
+          }
+        }
+        else {
+          gs.y += gs.dy;
+        }
+      }
+      gs.x += gs.dx;
+    }
 
-    const c = <HTMLCanvasElement>document.getElementById("gameCanvas");
-    const ctx = c.getContext("2d") as CanvasRenderingContext2D;
-
-    const sheet = new Image();
-    sheet.src = "images/sheet.png";
+    const draw = () => {
+      const ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D;
+      const gs = this.state;
+      ctx.fillStyle = 'rgb(255, 255, 255)';
+      ctx.fillRect(0, 0, 640, 480);
+      ctx.fillStyle = 'rgb(0, 0, 0)';
+      if (gs.x_dir == -1) {
+        ctx.translate(gs.x + 32, gs.y);
+        ctx.scale(-1, 1);
+        if (gs.dx != 0) {
+          gs.frame = Math.floor(gs.tick / 5) % 4;
+          ctx.drawImage(this.spriteSheet, gs.frame * 32, 32, 32, 32, 0, 0, 32, 32);
+        }
+        else {
+          ctx.drawImage(this.spriteSheet, 0, 0, 32, 32, 0, 0, 32, 32);
+        }
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+      }
+      else {
+        if (gs.dx != 0) {
+          gs.frame = Math.floor(gs.tick / 5) % 4;
+          ctx.drawImage(this.spriteSheet, gs.frame * 32, 32, 32, 32, gs.x, gs.y, 32, 32);
+        }
+        else {
+          ctx.drawImage(this.spriteSheet, 0, 0, 32, 32, gs.x, gs.y, 32, 32);
+        }
+      }
+      ctx.fillRect(gs.xx, gs.yy, 32, 32);
+    }
 
     const Key = {
       _pressed: {},
@@ -45,7 +108,6 @@ class App {
         delete this._pressed[event.keyCode];
       }
     };
-
     window.addEventListener('keyup', function (event) {
       Key.onKeyup(event);
     }, false);
@@ -53,126 +115,90 @@ class App {
       Key.onKeydown(event);
     }, false);
 
-    let can_jump = false;
-    let x = 0, y = 0, xx = 0, yy = 0;
-    let x_dir = 1;
-    let tick = 0;
-    let frame = 0;
-    let dx = 0, dy = 0;
-    const fps = 60;
-
-    function run() {
-      update();
-      draw();
-      push();
-    };
-
-    // Start the game loop
-    setInterval(run, 1000 / fps);
-
-    const jump_v = 12;
-    const v = 4;
-
     const update = () => {
-      tick += 1;
-      dx = 0;
-      if (Key.isDown(Key.UP) && can_jump) {
-        dy = -jump_v;
-        can_jump = false;
+      const jump_v = 12;
+      const v = 4;
+      const gs = this.state;
+      gs.tick += 1;
+      gs.dx = 0;
+      if (Key.isDown(Key.UP) && gs.can_jump) {
+        gs.dy = -jump_v;
+        gs.can_jump = false;
       }
       if (Key.isDown(Key.LEFT)) {
-        dx = -v;
-        x_dir = -1;
+        gs.dx = -v;
+        gs.x_dir = -1;
       }
       if (Key.isDown(Key.RIGHT)) {
-        dx = v;
-        x_dir = 1;
+        gs.dx = v;
+        gs.x_dir = 1;
       }
       collisions();
-      dy += 0.7;
+      gs.dy += 0.7;
 
-      if (y > 480 - 32) {
-        dy = 0;
-        y = 480 - 32;
-        can_jump = true;
+      if (gs.y > 480 - 32) {
+        gs.dy = 0;
+        gs.y = 480 - 32;
+        gs.can_jump = true;
       }
     }
-
-    function colliding() {
-      if (x >= xx + 32 || x + 32 <= xx) return false;
-      if (y >= yy + 32 || y + 32 <= yy) return false;
-      return true;
-    }
-
-    function collisions() {
-      y += dy;
-      if (colliding()) {
-        y -= dy;
-        if (!colliding()) {
-          y += dy;
-          if (dy > 0) {
-            dy = 0;
-            can_jump = true;
-            y = yy - 32;
-          }
-          else {
-            y = yy + 32;
-          }
-        }
-        else {
-          y += dy;
-        }
-      }
-      x += dx;
-    }
-
-    function draw() {
-      ctx.fillStyle = 'rgb(255, 255, 255)';
-      ctx.fillRect(0, 0, 640, 480);
-      ctx.fillStyle = 'rgb(0, 0, 0)';
-      if (x_dir == -1) {
-        ctx.translate(x + 32, y);
-        ctx.scale(-1, 1);
-        if (dx != 0) {
-          frame = Math.floor(tick / 5) % 4;
-          ctx.drawImage(sheet, frame * 32, 32, 32, 32, 0, 0, 32, 32);
-        }
-        else {
-          ctx.drawImage(sheet, 0, 0, 32, 32, 0, 0, 32, 32);
-        }
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-      }
-      else {
-        if (dx != 0) {
-          frame = Math.floor(tick / 5) % 4;
-          ctx.drawImage(sheet, frame * 32, 32, 32, 32, x, y, 32, 32);
-        }
-        else {
-          ctx.drawImage(sheet, 0, 0, 32, 32, x, y, 32, 32);
-        }
-      }
-      ctx.fillRect(xx, yy, 32, 32);
-    }
-
-    function push() {
-      chan.push("new:msg", {
+    const push = () => {
+      roomChan.push("new:msg", {
         user: '1',
-        x: x,
-        y: y,
+        x: this.state.x,
+        y: this.state.y,
         user_id: user_id
       })
     }
+    setInterval(() => {
+      update();
+      draw();
+      push();
+    }, 1000 / this.state.fps);
+  }
+}
+class App {
+  private static readonly user_id = Math.floor(Math.random()*10000);;
+  private static socket: Socket;
+  private static roomChan: Channel;
 
-    chan.on("new:msg", msg => {
-      if (msg.user_id !== user_id) {
-        xx = msg.x;
-        yy = msg.y;
+  private static init() {
+    this.socket = new Socket("/socket", {
+      params: {id: this.user_id}
+    })
+    this.socket.connect();
+    this.roomChan = this.socket.channel("rooms:lobby", {})
+    this.roomChan.join().receive("ignore", () => console.log("auth error"))
+               .receive("ok", () => {console.log("join ok")})
+    this.roomChan.onError(e => console.log("something went wrong", e))
+  }
+
+  public static run() {
+    this.init();
+    // chan.onClose(e => console.log("channel closed", e))
+
+    const game = new Game();
+    const c = game.canvas;
+    const sheet = game.spriteSheet;
+    const gs = game.state;
+
+
+
+
+    // Start the game loop
+    game.run(this.roomChan, this.user_id);
+
+
+    this.roomChan.on("new:msg", msg => {
+      if (msg.user_id !== this.user_id) {
+        gs.xx = msg.x;
+        gs.yy = msg.y;
       }
     })
   }
 
 }
 
-App.init();
+App.run();
 
 export default App
