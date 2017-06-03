@@ -1705,6 +1705,9 @@ var App = function () {
             // Start the game loop
             game.run(this.roomChan);
             this.roomChan.on("new:msg", function (msg) {
+                if (msg.user_id === _this4.game.user_id) {
+                    return;
+                }
                 var changedPlayer = _this4.game.state.playerStates.filter(function (x) {
                     return x.id === msg.user_id;
                 });
@@ -1935,6 +1938,9 @@ var App = (function () {
         // Start the game loop
         game.run(this.roomChan);
         this.roomChan.on("new:msg", function (msg) {
+            if (msg.user_id === _this.game.user_id) {
+                return;
+            }
             var changedPlayer = _this.game.state.playerStates.filter(function (x) { return x.id === msg.user_id; });
             if (changedPlayer.length === 1) {
                 changedPlayer[0].x = msg.x;

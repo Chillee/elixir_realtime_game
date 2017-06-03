@@ -217,6 +217,9 @@ class App {
     game.run(this.roomChan);
 
     this.roomChan.on("new:msg", (msg:{x: number, y:number, user_id: number}) => {
+      if (msg.user_id === this.game.user_id) {
+        return;
+      }
       const changedPlayer = this.game.state.playerStates.filter(x => x.id === msg.user_id);
       if (changedPlayer.length === 1) {
         changedPlayer[0].x = msg.x;
