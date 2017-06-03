@@ -13,19 +13,19 @@ class App {
 
     socket.connect();
 
-    var chan = socket.channel("rooms:lobby", {})
+    const chan = socket.channel("rooms:lobby", {})
     chan.join().receive("ignore", () => console.log("auth error"))
-               .receive("ok", (x) => {console.log("join ok"); console.log(x)})
+               .receive("ok", () => {console.log("join ok")})
     chan.onError(e => console.log("something went wrong", e))
     // chan.onClose(e => console.log("channel closed", e))
 
     const c = <HTMLCanvasElement>document.getElementById("gameCanvas");
-    var ctx = c.getContext("2d") as CanvasRenderingContext2D;
+    const ctx = c.getContext("2d") as CanvasRenderingContext2D;
 
-    var sheet = new Image();
+    const sheet = new Image();
     sheet.src = "images/sheet.png";
 
-    var Key = {
+    const Key = {
       _pressed: {},
 
       LEFT: 37,
@@ -53,13 +53,13 @@ class App {
       Key.onKeydown(event);
     }, false);
 
-    var can_jump = false;
-    var x = 0, y = 0, xx = 0, yy = 0;
-    var x_dir = 1;
-    var tick = 0;
-    var frame = 0;
-    var dx = 0, dy = 0;
-    var fps = 60;
+    let can_jump = false;
+    let x = 0, y = 0, xx = 0, yy = 0;
+    let x_dir = 1;
+    let tick = 0;
+    let frame = 0;
+    let dx = 0, dy = 0;
+    const fps = 60;
 
     function run() {
       update();
@@ -70,10 +70,10 @@ class App {
     // Start the game loop
     setInterval(run, 1000 / fps);
 
-    var jump_v = 12;
-    var v = 4;
+    const jump_v = 12;
+    const v = 4;
 
-    function update() {
+    const update = () => {
       tick += 1;
       dx = 0;
       if (Key.isDown(Key.UP) && can_jump) {

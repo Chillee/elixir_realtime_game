@@ -1450,8 +1450,8 @@ var App = function () {
             var chan = socket.channel("rooms:lobby", {});
             chan.join().receive("ignore", function () {
                 return console.log("auth error");
-            }).receive("ok", function (x) {
-                console.log("join ok");console.log(x);
+            }).receive("ok", function () {
+                console.log("join ok");
             });
             chan.onError(function (e) {
                 return console.log("something went wrong", e);
@@ -1504,7 +1504,7 @@ var App = function () {
             setInterval(run, 1000 / fps);
             var jump_v = 12;
             var v = 4;
-            function update() {
+            var update = function update() {
                 tick += 1;
                 dx = 0;
                 if (Key.isDown(Key.UP) && can_jump) {
@@ -1526,7 +1526,7 @@ var App = function () {
                     y = 480 - 32;
                     can_jump = true;
                 }
-            }
+            };
             function colliding() {
                 if (x >= xx + 32 || x + 32 <= xx) return false;
                 if (y >= yy + 32 || y + 32 <= yy) return false;
@@ -1614,7 +1614,7 @@ var App = (function () {
         socket.connect();
         var chan = socket.channel("rooms:lobby", {});
         chan.join().receive("ignore", function () { return console.log("auth error"); })
-            .receive("ok", function (x) { console.log("join ok"); console.log(x); });
+            .receive("ok", function () { console.log("join ok"); });
         chan.onError(function (e) { return console.log("something went wrong", e); });
         // chan.onClose(e => console.log("channel closed", e))
         var c = document.getElementById("gameCanvas");
@@ -1660,7 +1660,7 @@ var App = (function () {
         setInterval(run, 1000 / fps);
         var jump_v = 12;
         var v = 4;
-        function update() {
+        var update = function () {
             tick += 1;
             dx = 0;
             if (Key.isDown(Key.UP) && can_jump) {
@@ -1682,7 +1682,7 @@ var App = (function () {
                 y = 480 - 32;
                 can_jump = true;
             }
-        }
+        };
         function colliding() {
             if (x >= xx + 32 || x + 32 <= xx)
                 return false;
