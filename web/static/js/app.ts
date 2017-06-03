@@ -1,12 +1,12 @@
+"use strict";
 import {
-  Socket,
-  LongPoller
+  Socket
 } from "phoenix"
 
 class App {
 
-  static init() {
-    let user_id = Math.floor(Math.random()*10000);
+  public static init() {
+    const user_id = Math.floor(Math.random()*10000);
     let socket = new Socket("/socket", {
       params: {id: user_id}
     })
@@ -18,9 +18,9 @@ class App {
     chan.join().receive("ignore", () => console.log("auth error"))
                .receive("ok", (x) => {console.log("join ok"); console.log(x)})
     chan.onError(e => console.log("something went wrong", e))
-    chan.onClose(e => console.log("channel closed", e))
+    // chan.onClose(e => console.log("channel closed", e))
 
-    var c = document.getElementById("gameCanvas");
+    const c = <HTMLCanvasElement>document.getElementById("gameCanvas");
     var ctx = c.getContext("2d");
 
     var sheet = new Image();
@@ -61,7 +61,7 @@ class App {
     var frame = 0;
     var dx = 0, dy = 0;
     x = y = xx = yy = 0;
-    var fps = 30;
+    var fps = 60;
 
     function run() {
       update();
@@ -175,6 +175,6 @@ class App {
 
 }
 
-$(() => App.init())
+App.init();
 
 export default App

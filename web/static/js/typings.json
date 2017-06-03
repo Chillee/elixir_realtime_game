@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "phoenix": "registry:npm/phoenix#1.2.0+20160823012234"
+  }
+}
