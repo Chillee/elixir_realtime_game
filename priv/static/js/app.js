@@ -1434,87 +1434,173 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 Object.defineProperty(exports, "__esModule", { value: true });
 var phoenix_1 = require("phoenix");
 
-var GameState = function GameState() {
-    _classCallCheck(this, GameState);
+var PlayerState = function PlayerState(x, y, id) {
+    _classCallCheck(this, PlayerState);
 
     this.x = 0;
     this.y = 0;
-    this.xx = 0;
-    this.yy = 0;
-    this.can_jump = false;
     this.x_dir = 1;
-    this.tick = 0;
-    this.frame = 0;
+    this.id = 0;
     this.dx = 0;
     this.dy = 0;
-    this.fps = 60;
+    this.can_jump = false;
+    this.tick = 0;
+    this.frame = 0;
+    this.x = x;
+    this.y = y;
+    this.id = id;
 };
+
+var GameState = function () {
+    function GameState(user_id) {
+        _classCallCheck(this, GameState);
+
+        this.fps = 60;
+        this.user_id = user_id;
+        this.playerStates = new Array(new PlayerState(0, 0, user_id));
+    }
+
+    _createClass(GameState, [{
+        key: "userState",
+        get: function get() {
+            var _this = this;
+
+            return this.playerStates.filter(function (x) {
+                return x.id === _this.user_id;
+            })[0];
+        }
+    }, {
+        key: "nonUserStates",
+        get: function get() {
+            var _this2 = this;
+
+            return this.playerStates.filter(function (x) {
+                return x.id !== _this2.user_id;
+            });
+        }
+    }]);
+
+    return GameState;
+}();
 
 var Game = function () {
     function Game() {
         _classCallCheck(this, Game);
 
+        this.user_id = Math.floor(Math.random() * 10000);
         this.canvas = document.getElementById("gameCanvas");
         this.spriteSheet = new Image();
         this.spriteSheet.src = "images/sheet.png";
-        this.state = new GameState();
+        this.state = new GameState(this.user_id);
     }
 
     _createClass(Game, [{
+        key: "checkPlayerCollision",
+        value: function checkPlayerCollision(a, b) {
+            if (a.x >= b.x + 32 || a.x + 32 <= b.x) return false;
+            if (a.y >= b.y + 32 || a.y + 32 <= b.y) return false;
+            return true;
+        }
+    }, {
         key: "run",
-        value: function run(roomChan, user_id) {
-            var _this = this;
+        value: function run(roomChan) {
+            var _this3 = this;
 
             var collisions = function collisions() {
-                var gs = _this.state;
-                function colliding() {
-                    if (gs.x >= gs.xx + 32 || gs.x + 32 <= gs.xx) return false;
-                    if (gs.y >= gs.yy + 32 || gs.y + 32 <= gs.yy) return false;
-                    return true;
-                }
-                gs.y += gs.dy;
-                if (colliding()) {
-                    gs.y -= gs.dy;
-                    if (!colliding()) {
-                        gs.y += gs.dy;
-                        if (gs.dy > 0) {
-                            gs.dy = 0;
-                            gs.can_jump = true;
-                            gs.y = gs.yy - 32;
-                        } else {
-                            gs.y = gs.yy + 32;
+                var gs = _this3.state;
+                var players = gs.playerStates;
+                var user = gs.userState;
+                user.y += user.dy;
+                var _iteratorNormalCompletion = true;
+                var _didIteratorError = false;
+                var _iteratorError = undefined;
+
+                try {
+                    for (var _iterator = gs.nonUserStates[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                        var player = _step.value;
+
+                        if (_this3.checkPlayerCollision(user, player)) {
+                            user.y -= user.dy;
+                            if (!_this3.checkPlayerCollision(user, player)) {
+                                user.y += user.dy;
+                                if (user.dy > 0) {
+                                    user.dy = 0;
+                                    user.can_jump = true;
+                                    user.y = player.y - 32;
+                                } else {
+                                    user.y = player.y + 32;
+                                }
+                            } else {
+                                user.y += user.dy;
+                            }
                         }
-                    } else {
-                        gs.y += gs.dy;
+                    }
+                } catch (err) {
+                    _didIteratorError = true;
+                    _iteratorError = err;
+                } finally {
+                    try {
+                        if (!_iteratorNormalCompletion && _iterator.return) {
+                            _iterator.return();
+                        }
+                    } finally {
+                        if (_didIteratorError) {
+                            throw _iteratorError;
+                        }
                     }
                 }
-                gs.x += gs.dx;
+
+                user.x += user.dx;
             };
             var draw = function draw() {
-                var ctx = _this.canvas.getContext("2d");
-                var gs = _this.state;
+                var ctx = _this3.canvas.getContext("2d");
+                var gs = _this3.state;
                 ctx.fillStyle = 'rgb(255, 255, 255)';
                 ctx.fillRect(0, 0, 640, 480);
                 ctx.fillStyle = 'rgb(0, 0, 0)';
-                if (gs.x_dir == -1) {
-                    ctx.translate(gs.x + 32, gs.y);
+                var user = _this3.state.userState;
+                if (user.x_dir == -1) {
+                    ctx.translate(user.x + 32, user.y);
                     ctx.scale(-1, 1);
-                    if (gs.dx != 0) {
-                        gs.frame = Math.floor(gs.tick / 5) % 4;
-                        ctx.drawImage(_this.spriteSheet, gs.frame * 32, 32, 32, 32, 0, 0, 32, 32);
+                    if (user.dx != 0) {
+                        user.frame = Math.floor(user.tick / 5) % 4;
+                        ctx.drawImage(_this3.spriteSheet, user.frame * 32, 32, 32, 32, 0, 0, 32, 32);
                     } else {
-                        ctx.drawImage(_this.spriteSheet, 0, 0, 32, 32, 0, 0, 32, 32);
+                        ctx.drawImage(_this3.spriteSheet, 0, 0, 32, 32, 0, 0, 32, 32);
                     }
                     ctx.setTransform(1, 0, 0, 1, 0, 0);
                 } else {
-                    if (gs.dx != 0) {
-                        gs.frame = Math.floor(gs.tick / 5) % 4;
-                        ctx.drawImage(_this.spriteSheet, gs.frame * 32, 32, 32, 32, gs.x, gs.y, 32, 32);
+                    if (user.dx != 0) {
+                        user.frame = Math.floor(user.tick / 5) % 4;
+                        ctx.drawImage(_this3.spriteSheet, user.frame * 32, 32, 32, 32, user.x, user.y, 32, 32);
                     } else {
-                        ctx.drawImage(_this.spriteSheet, 0, 0, 32, 32, gs.x, gs.y, 32, 32);
+                        ctx.drawImage(_this3.spriteSheet, 0, 0, 32, 32, user.x, user.y, 32, 32);
                     }
                 }
-                ctx.fillRect(gs.xx, gs.yy, 32, 32);
+                var _iteratorNormalCompletion2 = true;
+                var _didIteratorError2 = false;
+                var _iteratorError2 = undefined;
+
+                try {
+                    for (var _iterator2 = _this3.state.nonUserStates[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                        var player = _step2.value;
+
+                        ctx.fillRect(player.x, player.y, 32, 32);
+                    }
+                } catch (err) {
+                    _didIteratorError2 = true;
+                    _iteratorError2 = err;
+                } finally {
+                    try {
+                        if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                            _iterator2.return();
+                        }
+                    } finally {
+                        if (_didIteratorError2) {
+                            throw _iteratorError2;
+                        }
+                    }
+                }
             };
             var Key = {
                 _pressed: {},
@@ -1541,35 +1627,36 @@ var Game = function () {
             var update = function update() {
                 var jump_v = 12;
                 var v = 4;
-                var gs = _this.state;
-                gs.tick += 1;
-                gs.dx = 0;
-                if (Key.isDown(Key.UP) && gs.can_jump) {
-                    gs.dy = -jump_v;
-                    gs.can_jump = false;
+                var gs = _this3.state;
+                var user = gs.userState;
+                user.tick += 1;
+                user.dx = 0;
+                if (Key.isDown(Key.UP) && user.can_jump) {
+                    user.dy = -jump_v;
+                    user.can_jump = false;
                 }
                 if (Key.isDown(Key.LEFT)) {
-                    gs.dx = -v;
-                    gs.x_dir = -1;
+                    user.dx = -v;
+                    user.x_dir = -1;
                 }
                 if (Key.isDown(Key.RIGHT)) {
-                    gs.dx = v;
-                    gs.x_dir = 1;
+                    user.dx = v;
+                    user.x_dir = 1;
                 }
                 collisions();
-                gs.dy += 0.7;
-                if (gs.y > 480 - 32) {
-                    gs.dy = 0;
-                    gs.y = 480 - 32;
-                    gs.can_jump = true;
+                user.dy += 0.7;
+                if (user.y > 480 - 32) {
+                    user.dy = 0;
+                    user.y = 480 - 32;
+                    user.can_jump = true;
                 }
             };
             var push = function push() {
                 roomChan.push("new:msg", {
                     user: '1',
-                    x: _this.state.x,
-                    y: _this.state.y,
-                    user_id: user_id
+                    x: _this3.state.userState.x,
+                    y: _this3.state.userState.y,
+                    user_id: _this3.user_id
                 });
             };
             setInterval(function () {
@@ -1591,9 +1678,7 @@ var App = function () {
     _createClass(App, null, [{
         key: "init",
         value: function init() {
-            this.socket = new phoenix_1.Socket("/socket", {
-                params: { id: this.user_id }
-            });
+            this.socket = new phoenix_1.Socket("/socket", {});
             this.socket.connect();
             this.roomChan = this.socket.channel("rooms:lobby", {});
             this.roomChan.join().receive("ignore", function () {
@@ -1608,20 +1693,26 @@ var App = function () {
     }, {
         key: "run",
         value: function run() {
-            var _this2 = this;
+            var _this4 = this;
 
             this.init();
             // chan.onClose(e => console.log("channel closed", e))
-            var game = new Game();
+            this.game = new Game();
+            var game = this.game;
             var c = game.canvas;
             var sheet = game.spriteSheet;
             var gs = game.state;
             // Start the game loop
-            game.run(this.roomChan, this.user_id);
+            game.run(this.roomChan);
             this.roomChan.on("new:msg", function (msg) {
-                if (msg.user_id !== _this2.user_id) {
-                    gs.xx = msg.x;
-                    gs.yy = msg.y;
+                var changedPlayer = _this4.game.state.playerStates.filter(function (x) {
+                    return x.id === msg.user_id;
+                });
+                if (changedPlayer.length === 1) {
+                    changedPlayer[0].x = msg.x;
+                    changedPlayer[0].y = msg.y;
+                } else {
+                    _this4.game.state.playerStates.push(new PlayerState(msg.x, msg.y, msg.user_id));
                 }
             });
         }
@@ -1630,7 +1721,6 @@ var App = function () {
     return App;
 }();
 
-App.user_id = Math.floor(Math.random() * 10000);
 App.run();
 exports.default = App;
 //# sourceMappingURL=app.js.map
@@ -1639,59 +1729,90 @@ exports.default = App;
 ;require.register("web/static/js/app.ts", function(exports, require, module) {
 "use strict";
 var phoenix_1 = require("phoenix");
-var GameState = (function () {
-    function GameState() {
+var PlayerState = (function () {
+    function PlayerState(x, y, id) {
         this.x = 0;
         this.y = 0;
-        this.xx = 0;
-        this.yy = 0;
-        this.can_jump = false;
         this.x_dir = 1;
-        this.tick = 0;
-        this.frame = 0;
+        this.id = 0;
         this.dx = 0;
         this.dy = 0;
-        this.fps = 60;
+        this.can_jump = false;
+        this.tick = 0;
+        this.frame = 0;
+        this.x = x;
+        this.y = y;
+        this.id = id;
     }
+    return PlayerState;
+}());
+var GameState = (function () {
+    function GameState(user_id) {
+        this.fps = 60;
+        this.user_id = user_id;
+        this.playerStates = new Array(new PlayerState(0, 0, user_id));
+    }
+    Object.defineProperty(GameState.prototype, "userState", {
+        get: function () {
+            var _this = this;
+            return this.playerStates.filter(function (x) { return x.id === _this.user_id; })[0];
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(GameState.prototype, "nonUserStates", {
+        get: function () {
+            var _this = this;
+            return this.playerStates.filter(function (x) { return x.id !== _this.user_id; });
+        },
+        enumerable: true,
+        configurable: true
+    });
     return GameState;
 }());
 var Game = (function () {
     function Game() {
+        this.user_id = Math.floor(Math.random() * 10000);
         this.canvas = document.getElementById("gameCanvas");
         this.spriteSheet = new Image();
         this.spriteSheet.src = "images/sheet.png";
-        this.state = new GameState();
+        this.state = new GameState(this.user_id);
     }
-    Game.prototype.run = function (roomChan, user_id) {
+    Game.prototype.checkPlayerCollision = function (a, b) {
+        if (a.x >= b.x + 32 || a.x + 32 <= b.x)
+            return false;
+        if (a.y >= b.y + 32 || a.y + 32 <= b.y)
+            return false;
+        return true;
+    };
+    Game.prototype.run = function (roomChan) {
         var _this = this;
         var collisions = function () {
             var gs = _this.state;
-            function colliding() {
-                if (gs.x >= gs.xx + 32 || gs.x + 32 <= gs.xx)
-                    return false;
-                if (gs.y >= gs.yy + 32 || gs.y + 32 <= gs.yy)
-                    return false;
-                return true;
-            }
-            gs.y += gs.dy;
-            if (colliding()) {
-                gs.y -= gs.dy;
-                if (!colliding()) {
-                    gs.y += gs.dy;
-                    if (gs.dy > 0) {
-                        gs.dy = 0;
-                        gs.can_jump = true;
-                        gs.y = gs.yy - 32;
+            var players = gs.playerStates;
+            var user = gs.userState;
+            user.y += user.dy;
+            for (var _i = 0, _a = gs.nonUserStates; _i < _a.length; _i++) {
+                var player = _a[_i];
+                if (_this.checkPlayerCollision(user, player)) {
+                    user.y -= user.dy;
+                    if (!_this.checkPlayerCollision(user, player)) {
+                        user.y += user.dy;
+                        if (user.dy > 0) {
+                            user.dy = 0;
+                            user.can_jump = true;
+                            user.y = player.y - 32;
+                        }
+                        else {
+                            user.y = player.y + 32;
+                        }
                     }
                     else {
-                        gs.y = gs.yy + 32;
+                        user.y += user.dy;
                     }
                 }
-                else {
-                    gs.y += gs.dy;
-                }
             }
-            gs.x += gs.dx;
+            user.x += user.dx;
         };
         var draw = function () {
             var ctx = _this.canvas.getContext("2d");
@@ -1699,12 +1820,13 @@ var Game = (function () {
             ctx.fillStyle = 'rgb(255, 255, 255)';
             ctx.fillRect(0, 0, 640, 480);
             ctx.fillStyle = 'rgb(0, 0, 0)';
-            if (gs.x_dir == -1) {
-                ctx.translate(gs.x + 32, gs.y);
+            var user = _this.state.userState;
+            if (user.x_dir == -1) {
+                ctx.translate(user.x + 32, user.y);
                 ctx.scale(-1, 1);
-                if (gs.dx != 0) {
-                    gs.frame = Math.floor(gs.tick / 5) % 4;
-                    ctx.drawImage(_this.spriteSheet, gs.frame * 32, 32, 32, 32, 0, 0, 32, 32);
+                if (user.dx != 0) {
+                    user.frame = Math.floor(user.tick / 5) % 4;
+                    ctx.drawImage(_this.spriteSheet, user.frame * 32, 32, 32, 32, 0, 0, 32, 32);
                 }
                 else {
                     ctx.drawImage(_this.spriteSheet, 0, 0, 32, 32, 0, 0, 32, 32);
@@ -1712,15 +1834,18 @@ var Game = (function () {
                 ctx.setTransform(1, 0, 0, 1, 0, 0);
             }
             else {
-                if (gs.dx != 0) {
-                    gs.frame = Math.floor(gs.tick / 5) % 4;
-                    ctx.drawImage(_this.spriteSheet, gs.frame * 32, 32, 32, 32, gs.x, gs.y, 32, 32);
+                if (user.dx != 0) {
+                    user.frame = Math.floor(user.tick / 5) % 4;
+                    ctx.drawImage(_this.spriteSheet, user.frame * 32, 32, 32, 32, user.x, user.y, 32, 32);
                 }
                 else {
-                    ctx.drawImage(_this.spriteSheet, 0, 0, 32, 32, gs.x, gs.y, 32, 32);
+                    ctx.drawImage(_this.spriteSheet, 0, 0, 32, 32, user.x, user.y, 32, 32);
                 }
             }
-            ctx.fillRect(gs.xx, gs.yy, 32, 32);
+            for (var _i = 0, _a = _this.state.nonUserStates; _i < _a.length; _i++) {
+                var player = _a[_i];
+                ctx.fillRect(player.x, player.y, 32, 32);
+            }
         };
         var Key = {
             _pressed: {},
@@ -1748,34 +1873,35 @@ var Game = (function () {
             var jump_v = 12;
             var v = 4;
             var gs = _this.state;
-            gs.tick += 1;
-            gs.dx = 0;
-            if (Key.isDown(Key.UP) && gs.can_jump) {
-                gs.dy = -jump_v;
-                gs.can_jump = false;
+            var user = gs.userState;
+            user.tick += 1;
+            user.dx = 0;
+            if (Key.isDown(Key.UP) && user.can_jump) {
+                user.dy = -jump_v;
+                user.can_jump = false;
             }
             if (Key.isDown(Key.LEFT)) {
-                gs.dx = -v;
-                gs.x_dir = -1;
+                user.dx = -v;
+                user.x_dir = -1;
             }
             if (Key.isDown(Key.RIGHT)) {
-                gs.dx = v;
-                gs.x_dir = 1;
+                user.dx = v;
+                user.x_dir = 1;
             }
             collisions();
-            gs.dy += 0.7;
-            if (gs.y > 480 - 32) {
-                gs.dy = 0;
-                gs.y = 480 - 32;
-                gs.can_jump = true;
+            user.dy += 0.7;
+            if (user.y > 480 - 32) {
+                user.dy = 0;
+                user.y = 480 - 32;
+                user.can_jump = true;
             }
         };
         var push = function () {
             roomChan.push("new:msg", {
                 user: '1',
-                x: _this.state.x,
-                y: _this.state.y,
-                user_id: user_id
+                x: _this.state.userState.x,
+                y: _this.state.userState.y,
+                user_id: _this.user_id
             });
         };
         setInterval(function () {
@@ -1789,11 +1915,8 @@ var Game = (function () {
 var App = (function () {
     function App() {
     }
-    ;
     App.init = function () {
-        this.socket = new phoenix_1.Socket("/socket", {
-            params: { id: this.user_id }
-        });
+        this.socket = new phoenix_1.Socket("/socket", {});
         this.socket.connect();
         this.roomChan = this.socket.channel("rooms:lobby", {});
         this.roomChan.join().receive("ignore", function () { return console.log("auth error"); })
@@ -1804,22 +1927,26 @@ var App = (function () {
         var _this = this;
         this.init();
         // chan.onClose(e => console.log("channel closed", e))
-        var game = new Game();
+        this.game = new Game();
+        var game = this.game;
         var c = game.canvas;
         var sheet = game.spriteSheet;
         var gs = game.state;
         // Start the game loop
-        game.run(this.roomChan, this.user_id);
+        game.run(this.roomChan);
         this.roomChan.on("new:msg", function (msg) {
-            if (msg.user_id !== _this.user_id) {
-                gs.xx = msg.x;
-                gs.yy = msg.y;
+            var changedPlayer = _this.game.state.playerStates.filter(function (x) { return x.id === msg.user_id; });
+            if (changedPlayer.length === 1) {
+                changedPlayer[0].x = msg.x;
+                changedPlayer[0].y = msg.y;
+            }
+            else {
+                _this.game.state.playerStates.push(new PlayerState(msg.x, msg.y, msg.user_id));
             }
         });
     };
     return App;
 }());
-App.user_id = Math.floor(Math.random() * 10000);
 App.run();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = App;

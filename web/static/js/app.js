@@ -1,57 +1,76 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const phoenix_1 = require("phoenix");
-class GameState {
-    constructor() {
+class PlayerState {
+    constructor(x, y, id) {
         this.x = 0;
         this.y = 0;
-        this.xx = 0;
-        this.yy = 0;
-        this.can_jump = false;
         this.x_dir = 1;
-        this.tick = 0;
-        this.frame = 0;
+        this.id = 0;
         this.dx = 0;
         this.dy = 0;
+        this.can_jump = false;
+        this.tick = 0;
+        this.frame = 0;
+        this.x = x;
+        this.y = y;
+        this.id = id;
+    }
+}
+class GameState {
+    constructor(user_id) {
         this.fps = 60;
+        this.user_id = user_id;
+        this.playerStates = new Array(new PlayerState(0, 0, user_id));
+    }
+    get userState() {
+        return this.playerStates.filter(x => x.id === this.user_id)[0];
+    }
+    get nonUserStates() {
+        return this.playerStates.filter(x => x.id !== this.user_id);
     }
 }
 class Game {
     constructor() {
+        this.user_id = Math.floor(Math.random() * 10000);
         this.canvas = document.getElementById("gameCanvas");
         this.spriteSheet = new Image();
         this.spriteSheet.src = "images/sheet.png";
-        this.state = new GameState();
+        this.state = new GameState(this.user_id);
     }
-    run(roomChan, user_id) {
+    checkPlayerCollision(a, b) {
+        if (a.x >= b.x + 32 || a.x + 32 <= b.x)
+            return false;
+        if (a.y >= b.y + 32 || a.y + 32 <= b.y)
+            return false;
+        return true;
+    }
+    run(roomChan) {
         const collisions = () => {
             const gs = this.state;
-            function colliding() {
-                if (gs.x >= gs.xx + 32 || gs.x + 32 <= gs.xx)
-                    return false;
-                if (gs.y >= gs.yy + 32 || gs.y + 32 <= gs.yy)
-                    return false;
-                return true;
-            }
-            gs.y += gs.dy;
-            if (colliding()) {
-                gs.y -= gs.dy;
-                if (!colliding()) {
-                    gs.y += gs.dy;
-                    if (gs.dy > 0) {
-                        gs.dy = 0;
-                        gs.can_jump = true;
-                        gs.y = gs.yy - 32;
+            let players = gs.playerStates;
+            let user = gs.userState;
+            user.y += user.dy;
+            for (const player of gs.nonUserStates) {
+                if (this.checkPlayerCollision(user, player)) {
+                    user.y -= user.dy;
+                    if (!this.checkPlayerCollision(user, player)) {
+                        user.y += user.dy;
+                        if (user.dy > 0) {
+                            user.dy = 0;
+                            user.can_jump = true;
+                            user.y = player.y - 32;
+                        }
+                        else {
+                            user.y = player.y + 32;
+                        }
                     }
                     else {
-                        gs.y = gs.yy + 32;
+                        user.y += user.dy;
                     }
                 }
-                else {
-                    gs.y += gs.dy;
-                }
             }
-            gs.x += gs.dx;
+            user.x += user.dx;
         };
         const draw = () => {
             const ctx = this.canvas.getContext("2d");
@@ -59,12 +78,13 @@ class Game {
             ctx.fillStyle = 'rgb(255, 255, 255)';
             ctx.fillRect(0, 0, 640, 480);
             ctx.fillStyle = 'rgb(0, 0, 0)';
-            if (gs.x_dir == -1) {
-                ctx.translate(gs.x + 32, gs.y);
+            const user = this.state.userState;
+            if (user.x_dir == -1) {
+                ctx.translate(user.x + 32, user.y);
                 ctx.scale(-1, 1);
-                if (gs.dx != 0) {
-                    gs.frame = Math.floor(gs.tick / 5) % 4;
-                    ctx.drawImage(this.spriteSheet, gs.frame * 32, 32, 32, 32, 0, 0, 32, 32);
+                if (user.dx != 0) {
+                    user.frame = Math.floor(user.tick / 5) % 4;
+                    ctx.drawImage(this.spriteSheet, user.frame * 32, 32, 32, 32, 0, 0, 32, 32);
                 }
                 else {
                     ctx.drawImage(this.spriteSheet, 0, 0, 32, 32, 0, 0, 32, 32);
@@ -72,15 +92,17 @@ class Game {
                 ctx.setTransform(1, 0, 0, 1, 0, 0);
             }
             else {
-                if (gs.dx != 0) {
-                    gs.frame = Math.floor(gs.tick / 5) % 4;
-                    ctx.drawImage(this.spriteSheet, gs.frame * 32, 32, 32, 32, gs.x, gs.y, 32, 32);
+                if (user.dx != 0) {
+                    user.frame = Math.floor(user.tick / 5) % 4;
+                    ctx.drawImage(this.spriteSheet, user.frame * 32, 32, 32, 32, user.x, user.y, 32, 32);
                 }
                 else {
-                    ctx.drawImage(this.spriteSheet, 0, 0, 32, 32, gs.x, gs.y, 32, 32);
+                    ctx.drawImage(this.spriteSheet, 0, 0, 32, 32, user.x, user.y, 32, 32);
                 }
             }
-            ctx.fillRect(gs.xx, gs.yy, 32, 32);
+            for (const player of this.state.nonUserStates) {
+                ctx.fillRect(player.x, player.y, 32, 32);
+            }
         };
         const Key = {
             _pressed: {},
@@ -108,34 +130,35 @@ class Game {
             const jump_v = 12;
             const v = 4;
             const gs = this.state;
-            gs.tick += 1;
-            gs.dx = 0;
-            if (Key.isDown(Key.UP) && gs.can_jump) {
-                gs.dy = -jump_v;
-                gs.can_jump = false;
+            const user = gs.userState;
+            user.tick += 1;
+            user.dx = 0;
+            if (Key.isDown(Key.UP) && user.can_jump) {
+                user.dy = -jump_v;
+                user.can_jump = false;
             }
             if (Key.isDown(Key.LEFT)) {
-                gs.dx = -v;
-                gs.x_dir = -1;
+                user.dx = -v;
+                user.x_dir = -1;
             }
             if (Key.isDown(Key.RIGHT)) {
-                gs.dx = v;
-                gs.x_dir = 1;
+                user.dx = v;
+                user.x_dir = 1;
             }
             collisions();
-            gs.dy += 0.7;
-            if (gs.y > 480 - 32) {
-                gs.dy = 0;
-                gs.y = 480 - 32;
-                gs.can_jump = true;
+            user.dy += 0.7;
+            if (user.y > 480 - 32) {
+                user.dy = 0;
+                user.y = 480 - 32;
+                user.can_jump = true;
             }
         };
         const push = () => {
             roomChan.push("new:msg", {
                 user: '1',
-                x: this.state.x,
-                y: this.state.y,
-                user_id: user_id
+                x: this.state.userState.x,
+                y: this.state.userState.y,
+                user_id: this.user_id
             });
         };
         setInterval(() => {
@@ -146,11 +169,8 @@ class Game {
     }
 }
 class App {
-    ;
     static init() {
-        this.socket = new phoenix_1.Socket("/socket", {
-            params: { id: this.user_id }
-        });
+        this.socket = new phoenix_1.Socket("/socket", {});
         this.socket.connect();
         this.roomChan = this.socket.channel("rooms:lobby", {});
         this.roomChan.join().receive("ignore", () => console.log("auth error"))
@@ -160,21 +180,25 @@ class App {
     static run() {
         this.init();
         // chan.onClose(e => console.log("channel closed", e))
-        const game = new Game();
+        this.game = new Game();
+        const game = this.game;
         const c = game.canvas;
         const sheet = game.spriteSheet;
         const gs = game.state;
         // Start the game loop
-        game.run(this.roomChan, this.user_id);
-        this.roomChan.on("new:msg", msg => {
-            if (msg.user_id !== this.user_id) {
-                gs.xx = msg.x;
-                gs.yy = msg.y;
+        game.run(this.roomChan);
+        this.roomChan.on("new:msg", (msg) => {
+            const changedPlayer = this.game.state.playerStates.filter(x => x.id === msg.user_id);
+            if (changedPlayer.length === 1) {
+                changedPlayer[0].x = msg.x;
+                changedPlayer[0].y = msg.y;
+            }
+            else {
+                this.game.state.playerStates.push(new PlayerState(msg.x, msg.y, msg.user_id));
             }
         });
     }
 }
-App.user_id = Math.floor(Math.random() * 10000);
 App.run();
 exports.default = App;
 //# sourceMappingURL=app.js.map
