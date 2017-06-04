@@ -1433,17 +1433,110 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var phoenix_1 = require("phoenix");
+var state_1 = require("./state");
+var entities_1 = require("./entities");
+var game_1 = require("./game");
 
-var Constants = function Constants() {
-    _classCallCheck(this, Constants);
-};
+var App = function () {
+    function App() {
+        _classCallCheck(this, App);
+    }
 
-Constants.PLAYER_W = 32;
-Constants.PLAYER_H = 32;
-Constants.W = 640;
-Constants.H = 640;
-Constants.LEVEL_W = 0;
-Constants.LEVEL_H = 0;
+    _createClass(App, null, [{
+        key: "init",
+        value: function init() {
+            this.socket = new phoenix_1.Socket("/socket", {});
+            this.socket.connect();
+            this.roomChan = this.socket.channel("rooms:lobby", {});
+            this.roomChan.join().receive("ignore", function () {
+                return console.log("auth error");
+            }).receive("ok", function () {
+                console.log("join ok");
+            });
+            this.roomChan.onError(function (e) {
+                return console.log("something went wrong", e);
+            });
+        }
+    }, {
+        key: "run",
+        value: function run() {
+            var _this = this;
+
+            this.init();
+            // chan.onClose(e => console.log("channel closed", e))
+            this.game = new game_1.Game();
+            var game = this.game;
+            var c = game.canvas;
+            var sheet = game.spriteSheet;
+            var gs = game.state;
+            // Start the game loop
+            game.run(this.roomChan);
+            this.roomChan.on("update_pos", function (msg) {
+                if (msg.user_id === _this.game.user_id) {
+                    return;
+                }
+                var changedPlayer = _this.game.state.playerStates.filter(function (x) {
+                    return x.id === msg.user_id;
+                });
+                if (changedPlayer.length === 1) {
+                    changedPlayer[0].x = msg.x;
+                    changedPlayer[0].y = msg.y;
+                } else {
+                    _this.game.state.playerStates.push(new state_1.PlayerState(msg.x, msg.y, msg.user_id));
+                }
+            });
+            this.roomChan.on("remove_player", function (data) {
+                var player_idx = _this.game.state.playerStates.findIndex(function (x) {
+                    return x.id === data.user_id;
+                });
+                _this.game.state.playerStates.splice(player_idx, 1);
+            });
+            this.roomChan.on("world_data", function (data) {
+                var _iteratorNormalCompletion = true;
+                var _didIteratorError = false;
+                var _iteratorError = undefined;
+
+                try {
+                    for (var _iterator = data.players[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                        var player = _step.value;
+
+                        _this.game.level.collidables.push(new entities_1.PlayerBlock(player.x, player.y));
+                    }
+                } catch (err) {
+                    _didIteratorError = true;
+                    _iteratorError = err;
+                } finally {
+                    try {
+                        if (!_iteratorNormalCompletion && _iterator.return) {
+                            _iterator.return();
+                        }
+                    } finally {
+                        if (_didIteratorError) {
+                            throw _iteratorError;
+                        }
+                    }
+                }
+            });
+        }
+    }]);
+
+    return App;
+}();
+
+App.run();
+exports.default = App;
+//# sourceMappingURL=app.js.map
+});
+
+;require.register("web/static/js/camera.js", function(exports, require, module) {
+"use strict";
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var constants_1 = require("./constants");
 
 var Camera = function () {
     function Camera() {
@@ -1453,13 +1546,13 @@ var Camera = function () {
     _createClass(Camera, null, [{
         key: "update",
         value: function update(user) {
-            this.targetX = user.x + Constants.PLAYER_W / 2 - Constants.W / 2;
-            this.targetY = user.y + Constants.PLAYER_H / 2 - Constants.H / 2;
+            this.targetX = user.x + constants_1.Constants.PLAYER_W / 2 - constants_1.Constants.W / 2;
+            this.targetY = user.y + constants_1.Constants.PLAYER_H / 2 - constants_1.Constants.H / 2;
             this.cx += (this.targetX - this.cx) * 0.1;
             this.cy += (this.targetY - this.cy) * 0.1;
-            if (this.cx > Constants.LEVEL_W - Constants.W) this.cx = Constants.LEVEL_W - Constants.W;
+            if (this.cx > constants_1.Constants.LEVEL_W - constants_1.Constants.W) this.cx = constants_1.Constants.LEVEL_W - constants_1.Constants.W;
             if (this.cx < 0) this.cx = 0;
-            if (this.cy > Constants.LEVEL_H - Constants.H) this.cy = Constants.LEVEL_H - Constants.H;
+            if (this.cy > constants_1.Constants.LEVEL_H - constants_1.Constants.H) this.cy = constants_1.Constants.LEVEL_H - constants_1.Constants.H;
             if (this.cy < 0) this.cy = 0;
         }
     }, {
@@ -1481,34 +1574,48 @@ Camera.cx = 0;
 Camera.cy = 0;
 Camera.targetX = 0;
 Camera.targetY = 0;
+exports.Camera = Camera;
+//# sourceMappingURL=camera.js.map
+});
 
-var PlayerState = function PlayerState(x, y, id) {
-    _classCallCheck(this, PlayerState);
+;require.register("web/static/js/constants.js", function(exports, require, module) {
+"use strict";
 
-    this.x = 0;
-    this.y = 0;
-    this.left = 3;
-    this.right = 3;
-    this.top = 6;
-    this.x_dir = 1;
-    this.id = 0;
-    this.dx = 0;
-    this.dy = 0;
-    this.can_jump = false;
-    this.tick = 0;
-    this.frame = 0;
-    this.x = x;
-    this.y = y;
-    this.id = id;
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+Object.defineProperty(exports, "__esModule", { value: true });
+
+var Constants = function Constants() {
+  _classCallCheck(this, Constants);
 };
+
+Constants.PLAYER_W = 32;
+Constants.PLAYER_H = 32;
+Constants.W = 640;
+Constants.H = 640;
+Constants.LEVEL_W = 0;
+Constants.LEVEL_H = 0;
+exports.Constants = Constants;
+//# sourceMappingURL=constants.js.map
+});
+
+;require.register("web/static/js/entities.js", function(exports, require, module) {
+"use strict";
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var constants_1 = require("./constants");
 
 var Block = function Block(x, y) {
     _classCallCheck(this, Block);
 
     this.x = 0;
     this.y = 0;
-    this.w = Constants.PLAYER_W;
-    this.h = Constants.PLAYER_H;
+    this.w = constants_1.Constants.PLAYER_W;
+    this.h = constants_1.Constants.PLAYER_H;
     this.left = 0;
     this.right = 0;
     this.top = 0;
@@ -1516,14 +1623,16 @@ var Block = function Block(x, y) {
     this.x = x;
     this.y = y;
 };
+
+exports.Block = Block;
 
 var PlayerBlock = function PlayerBlock(x, y) {
     _classCallCheck(this, PlayerBlock);
 
     this.x = 0;
     this.y = 0;
-    this.w = Constants.PLAYER_W;
-    this.h = Constants.PLAYER_H;
+    this.w = constants_1.Constants.PLAYER_W;
+    this.h = constants_1.Constants.PLAYER_H;
     this.left = 0;
     this.right = 0;
     this.top = 0;
@@ -1532,20 +1641,24 @@ var PlayerBlock = function PlayerBlock(x, y) {
     this.y = y;
 };
 
+exports.PlayerBlock = PlayerBlock;
+
 var Spike = function Spike(x, y) {
     _classCallCheck(this, Spike);
 
     this.x = 0;
     this.y = 0;
-    this.w = Constants.PLAYER_W;
-    this.h = Constants.PLAYER_H;
+    this.w = constants_1.Constants.PLAYER_W;
+    this.h = constants_1.Constants.PLAYER_H;
     this.left = 0;
     this.right = 0;
-    this.top = Constants.PLAYER_H / 2;
+    this.top = constants_1.Constants.PLAYER_H / 2;
     this.bottom = 0;
     this.x = x;
     this.y = y;
 };
+
+exports.Spike = Spike;
 
 var Level = function () {
     function Level() {
@@ -1582,8 +1695,8 @@ var Level = function () {
                 var ctx = canvas.getContext("2d");
                 ctx.drawImage(levelImage, 0, 0, levelImage.width, levelImage.height);
                 var data = ctx.getImageData(0, 0, levelImage.width, levelImage.height).data;
-                Constants.LEVEL_W = levelImage.width * 32;
-                Constants.LEVEL_H = levelImage.height * 32;
+                constants_1.Constants.LEVEL_W = levelImage.width * 32;
+                constants_1.Constants.LEVEL_H = levelImage.height * 32;
                 for (var y = 0; y < levelImage.height; y++) {
                     for (var x = 0; x < levelImage.width; x++) {
                         var r = data[(x + y * levelImage.width) * 4];
@@ -1610,37 +1723,22 @@ var Level = function () {
     return Level;
 }();
 
-var GameState = function () {
-    function GameState(user_id) {
-        _classCallCheck(this, GameState);
+exports.Level = Level;
+//# sourceMappingURL=entities.js.map
+});
 
-        this.fps = 60;
-        this.user_id = user_id;
-        this.playerStates = new Array(new PlayerState(0, 0, user_id));
-    }
+;require.register("web/static/js/game.js", function(exports, require, module) {
+"use strict";
 
-    _createClass(GameState, [{
-        key: "userState",
-        get: function get() {
-            var _this2 = this;
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-            return this.playerStates.filter(function (x) {
-                return x.id === _this2.user_id;
-            })[0];
-        }
-    }, {
-        key: "nonUserStates",
-        get: function get() {
-            var _this3 = this;
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-            return this.playerStates.filter(function (x) {
-                return x.id !== _this3.user_id;
-            });
-        }
-    }]);
-
-    return GameState;
-}();
+Object.defineProperty(exports, "__esModule", { value: true });
+var entities_1 = require("./entities");
+var state_1 = require("./state");
+var constants_1 = require("./constants");
+var camera_1 = require("./camera");
 
 var Game = function () {
     function Game() {
@@ -1651,16 +1749,16 @@ var Game = function () {
         this.canvas = document.getElementById("gameCanvas");
         this.spriteSheet = new Image();
         this.spriteSheet.src = "images/sheet.png";
-        this.state = new GameState(this.user_id);
-        this.level = new Level();
+        this.state = new state_1.GameState(this.user_id);
+        this.level = new entities_1.Level();
         this.level.create(this.state);
     }
 
     _createClass(Game, [{
         key: "checkCollision",
         value: function checkCollision(a, b) {
-            if (a.x >= b.x + b.w - a.left - b.right || a.x + Constants.PLAYER_W - a.right - b.left <= b.x) return false;
-            if (a.y >= b.y + b.h - a.top - b.bottom || a.y + Constants.PLAYER_H - b.top <= b.y) return false;
+            if (a.x >= b.x + b.w - a.left - b.right || a.x + constants_1.Constants.PLAYER_W - a.right - b.left <= b.x) return false;
+            if (a.y >= b.y + b.h - a.top - b.bottom || a.y + constants_1.Constants.PLAYER_H - b.top <= b.y) return false;
             return true;
         }
     }, {
@@ -1675,10 +1773,10 @@ var Game = function () {
     }, {
         key: "run",
         value: function run(roomChan) {
-            var _this4 = this;
+            var _this = this;
 
             var collisions = function collisions() {
-                var gs = _this4.state;
+                var gs = _this.state;
                 var players = gs.playerStates;
                 var user = gs.userState;
                 user.can_jump = false;
@@ -1688,18 +1786,18 @@ var Game = function () {
                 var _iteratorError = undefined;
 
                 try {
-                    for (var _iterator = _this4.level.collidables[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                    for (var _iterator = _this.level.collidables[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
                         var obj = _step.value;
 
-                        if (_this4.checkCollision(user, obj)) {
-                            if (obj instanceof PlayerBlock) {
+                        if (_this.checkCollision(user, obj)) {
+                            if (obj instanceof entities_1.PlayerBlock) {
                                 user.y -= user.dy;
-                                if (!_this4.checkCollision(user, obj)) {
+                                if (!_this.checkCollision(user, obj)) {
                                     user.y += user.dy;
                                     if (user.dy > 0) {
                                         user.dy = 0;
                                         user.can_jump = true;
-                                        user.y = obj.y - Constants.PLAYER_H + obj.top;
+                                        user.y = obj.y - constants_1.Constants.PLAYER_H + obj.top;
                                     }
                                 } else {
                                     user.y += user.dy;
@@ -1708,13 +1806,13 @@ var Game = function () {
                                 if (user.dy > 0) {
                                     user.dy = 0;
                                     user.can_jump = true;
-                                    user.y = obj.y - Constants.PLAYER_H + obj.top;
+                                    user.y = obj.y - constants_1.Constants.PLAYER_H + obj.top;
                                 } else {
                                     user.dy = 0;
                                     user.y = obj.y + obj.h - user.top - obj.bottom;
                                 }
-                                if (obj instanceof Spike) {
-                                    _this4.killPlayer();
+                                if (obj instanceof entities_1.Spike) {
+                                    _this.killPlayer();
                                 }
                             }
                         }
@@ -1740,12 +1838,12 @@ var Game = function () {
                 var _iteratorError2 = undefined;
 
                 try {
-                    for (var _iterator2 = _this4.level.collidables[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                    for (var _iterator2 = _this.level.collidables[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
                         var _obj = _step2.value;
 
-                        if (_this4.checkCollision(user, _obj) && !(_obj instanceof PlayerBlock)) {
+                        if (_this.checkCollision(user, _obj) && !(_obj instanceof entities_1.PlayerBlock)) {
                             if (user.dx > 0) {
-                                user.x = _obj.x - Constants.PLAYER_W + user.right + _obj.left;
+                                user.x = _obj.x - constants_1.Constants.PLAYER_W + user.right + _obj.left;
                             } else {
                                 user.x = _obj.x + _obj.w - user.left - _obj.right;
                             }
@@ -1767,23 +1865,23 @@ var Game = function () {
                 }
             };
             var draw = function draw() {
-                var ctx = _this4.canvas.getContext("2d");
-                var gs = _this4.state;
+                var ctx = _this.canvas.getContext("2d");
+                var gs = _this.state;
                 ctx.fillStyle = 'rgb(255, 255, 255)';
-                ctx.fillRect(0, 0, Constants.W, Constants.H);
+                ctx.fillRect(0, 0, constants_1.Constants.W, constants_1.Constants.H);
                 ctx.fillStyle = 'rgb(0, 0, 0)';
-                var user = _this4.state.userState;
+                var user = _this.state.userState;
                 var _iteratorNormalCompletion3 = true;
                 var _didIteratorError3 = false;
                 var _iteratorError3 = undefined;
 
                 try {
-                    for (var _iterator3 = _this4.level.collidables[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+                    for (var _iterator3 = _this.level.collidables[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
                         var obj = _step3.value;
 
-                        if (obj instanceof PlayerBlock) ctx.fillRect(obj.x - Camera.x, obj.y - Camera.y, obj.w, obj.h);
-                        if (obj instanceof Block) ctx.fillRect(obj.x - Camera.x, obj.y - Camera.y, obj.w, obj.h);
-                        if (obj instanceof Spike) ctx.drawImage(_this4.spriteSheet, Constants.PLAYER_W * 4, 0, Constants.PLAYER_W, Constants.PLAYER_H, obj.x - Camera.x, obj.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
+                        if (obj instanceof entities_1.PlayerBlock) ctx.fillRect(obj.x - camera_1.Camera.x, obj.y - camera_1.Camera.y, obj.w, obj.h);
+                        if (obj instanceof entities_1.Block) ctx.fillRect(obj.x - camera_1.Camera.x, obj.y - camera_1.Camera.y, obj.w, obj.h);
+                        if (obj instanceof entities_1.Spike) ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 4, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, obj.x - camera_1.Camera.x, obj.y - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                     }
                 } catch (err) {
                     _didIteratorError3 = true;
@@ -1801,21 +1899,21 @@ var Game = function () {
                 }
 
                 if (user.x_dir === -1) {
-                    ctx.translate(user.x + Constants.PLAYER_W - Camera.x, user.y - Camera.y);
+                    ctx.translate(user.x + constants_1.Constants.PLAYER_W - camera_1.Camera.x, user.y - camera_1.Camera.y);
                     ctx.scale(-1, 1);
                     if (user.dx != 0) {
                         user.frame = Math.floor(user.tick / 5) % 4;
-                        ctx.drawImage(_this4.spriteSheet, user.frame * Constants.PLAYER_W, Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H, 0, 0, Constants.PLAYER_W, Constants.PLAYER_H);
+                        ctx.drawImage(_this.spriteSheet, user.frame * constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, 0, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                     } else {
-                        ctx.drawImage(_this4.spriteSheet, 0, 0, Constants.PLAYER_W, Constants.PLAYER_H, 0, 0, Constants.PLAYER_W, Constants.PLAYER_H);
+                        ctx.drawImage(_this.spriteSheet, 0, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, 0, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                     }
                     ctx.setTransform(1, 0, 0, 1, 0, 0);
                 } else {
                     if (user.dx != 0) {
                         user.frame = Math.floor(user.tick / 5) % 4;
-                        ctx.drawImage(_this4.spriteSheet, user.frame * Constants.PLAYER_W, Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H, user.x - Camera.x, user.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
+                        ctx.drawImage(_this.spriteSheet, user.frame * constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, user.x - camera_1.Camera.x, user.y - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                     } else {
-                        ctx.drawImage(_this4.spriteSheet, 0, 0, Constants.PLAYER_W, Constants.PLAYER_H, user.x - Camera.x, user.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
+                        ctx.drawImage(_this.spriteSheet, 0, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, user.x - camera_1.Camera.x, user.y - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                     }
                 }
                 var _iteratorNormalCompletion4 = true;
@@ -1823,10 +1921,10 @@ var Game = function () {
                 var _iteratorError4 = undefined;
 
                 try {
-                    for (var _iterator4 = _this4.state.nonUserStates[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+                    for (var _iterator4 = _this.state.nonUserStates[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
                         var player = _step4.value;
 
-                        ctx.fillRect(player.x - Camera.x, player.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
+                        ctx.fillRect(player.x - camera_1.Camera.x, player.y - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                     }
                 } catch (err) {
                     _didIteratorError4 = true;
@@ -1843,14 +1941,14 @@ var Game = function () {
                     }
                 }
 
-                if (_this4.deathAnimFrame >= 5) {
-                    _this4.deathAnimFrame--;
+                if (_this.deathAnimFrame >= 5) {
+                    _this.deathAnimFrame--;
                     ctx.fillStyle = 'rgb(0, 0, 0)';
-                    ctx.fillRect(0, 0, Constants.W, Constants.H);
-                } else if (_this4.deathAnimFrame > 0) {
-                    _this4.deathAnimFrame--;
+                    ctx.fillRect(0, 0, constants_1.Constants.W, constants_1.Constants.H);
+                } else if (_this.deathAnimFrame > 0) {
+                    _this.deathAnimFrame--;
                     ctx.fillStyle = 'rgb(255, 255, 255)';
-                    ctx.fillRect(0, 0, Constants.W, Constants.H);
+                    ctx.fillRect(0, 0, constants_1.Constants.W, constants_1.Constants.H);
                 }
             };
             var Key = {
@@ -1877,18 +1975,18 @@ var Game = function () {
             }, false);
             var check_bounds = function check_bounds(user) {
                 if (user.x < 0) user.x = 0;
-                if (user.x > Constants.LEVEL_W - Constants.PLAYER_W) user.x = Constants.LEVEL_W - Constants.PLAYER_W;
+                if (user.x > constants_1.Constants.LEVEL_W - constants_1.Constants.PLAYER_W) user.x = constants_1.Constants.LEVEL_W - constants_1.Constants.PLAYER_W;
                 if (user.y < 0) user.y = 0;
-                if (user.y > Constants.LEVEL_H - Constants.PLAYER_H) {
+                if (user.y > constants_1.Constants.LEVEL_H - constants_1.Constants.PLAYER_H) {
                     user.dy = 0;
-                    user.y = Constants.LEVEL_H - Constants.PLAYER_H;
+                    user.y = constants_1.Constants.LEVEL_H - constants_1.Constants.PLAYER_H;
                     user.can_jump = true;
                 }
             };
             var update = function update() {
                 var jump_v = 12;
                 var v = 4;
-                var gs = _this4.state;
+                var gs = _this.state;
                 var user = gs.userState;
                 user.tick += 1;
                 if (Key.isDown(Key.UP) && user.can_jump) {
@@ -1910,13 +2008,13 @@ var Game = function () {
                 collisions();
                 user.dy += 0.7;
                 check_bounds(user);
-                Camera.update(user);
+                camera_1.Camera.update(user);
             };
             var push = function push() {
                 roomChan.push("update_pos", {
-                    x: _this4.state.userState.x,
-                    y: _this4.state.userState.y,
-                    user_id: _this4.user_id
+                    x: _this.state.userState.x,
+                    y: _this.state.userState.y,
+                    user_id: _this.user_id
                 });
             };
             setInterval(function () {
@@ -1930,95 +2028,75 @@ var Game = function () {
     return Game;
 }();
 
-var App = function () {
-    function App() {
-        _classCallCheck(this, App);
+exports.Game = Game;
+//# sourceMappingURL=game.js.map
+});
+
+;require.register("web/static/js/state.js", function(exports, require, module) {
+"use strict";
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+Object.defineProperty(exports, "__esModule", { value: true });
+
+var PlayerState = function PlayerState(x, y, id) {
+    _classCallCheck(this, PlayerState);
+
+    this.x = 0;
+    this.y = 0;
+    this.left = 3;
+    this.right = 3;
+    this.top = 6;
+    this.x_dir = 1;
+    this.id = 0;
+    this.dx = 0;
+    this.dy = 0;
+    this.can_jump = false;
+    this.tick = 0;
+    this.frame = 0;
+    this.x = x;
+    this.y = y;
+    this.id = id;
+};
+
+exports.PlayerState = PlayerState;
+
+var GameState = function () {
+    function GameState(user_id) {
+        _classCallCheck(this, GameState);
+
+        this.fps = 60;
+        this.user_id = user_id;
+        this.playerStates = new Array(new PlayerState(0, 0, user_id));
     }
 
-    _createClass(App, null, [{
-        key: "init",
-        value: function init() {
-            this.socket = new phoenix_1.Socket("/socket", {});
-            this.socket.connect();
-            this.roomChan = this.socket.channel("rooms:lobby", {});
-            this.roomChan.join().receive("ignore", function () {
-                return console.log("auth error");
-            }).receive("ok", function () {
-                console.log("join ok");
-            });
-            this.roomChan.onError(function (e) {
-                return console.log("something went wrong", e);
-            });
+    _createClass(GameState, [{
+        key: "userState",
+        get: function get() {
+            var _this = this;
+
+            return this.playerStates.filter(function (x) {
+                return x.id === _this.user_id;
+            })[0];
         }
     }, {
-        key: "run",
-        value: function run() {
-            var _this5 = this;
+        key: "nonUserStates",
+        get: function get() {
+            var _this2 = this;
 
-            this.init();
-            // chan.onClose(e => console.log("channel closed", e))
-            this.game = new Game();
-            var game = this.game;
-            var c = game.canvas;
-            var sheet = game.spriteSheet;
-            var gs = game.state;
-            // Start the game loop
-            game.run(this.roomChan);
-            this.roomChan.on("update_pos", function (msg) {
-                if (msg.user_id === _this5.game.user_id) {
-                    return;
-                }
-                var changedPlayer = _this5.game.state.playerStates.filter(function (x) {
-                    return x.id === msg.user_id;
-                });
-                if (changedPlayer.length === 1) {
-                    changedPlayer[0].x = msg.x;
-                    changedPlayer[0].y = msg.y;
-                } else {
-                    _this5.game.state.playerStates.push(new PlayerState(msg.x, msg.y, msg.user_id));
-                }
-            });
-            this.roomChan.on("remove_player", function (data) {
-                var player_idx = _this5.game.state.playerStates.findIndex(function (x) {
-                    return x.id === data.user_id;
-                });
-                _this5.game.state.playerStates.splice(player_idx, 1);
-            });
-            this.roomChan.on("world_data", function (data) {
-                var _iteratorNormalCompletion5 = true;
-                var _didIteratorError5 = false;
-                var _iteratorError5 = undefined;
-
-                try {
-                    for (var _iterator5 = data.players[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-                        var player = _step5.value;
-
-                        _this5.game.level.collidables.push(new PlayerBlock(player.x, player.y));
-                    }
-                } catch (err) {
-                    _didIteratorError5 = true;
-                    _iteratorError5 = err;
-                } finally {
-                    try {
-                        if (!_iteratorNormalCompletion5 && _iterator5.return) {
-                            _iterator5.return();
-                        }
-                    } finally {
-                        if (_didIteratorError5) {
-                            throw _iteratorError5;
-                        }
-                    }
-                }
+            return this.playerStates.filter(function (x) {
+                return x.id !== _this2.user_id;
             });
         }
     }]);
 
-    return App;
+    return GameState;
 }();
 
-App.run();
-exports.default = App;
-//# sourceMappingURL=app.js.map
+exports.GameState = GameState;
+//# sourceMappingURL=state.js.map
 });
 
 ;require.alias("phoenix/priv/static/phoenix.js", "phoenix");require.register("___globals___", function(exports, require, module) {

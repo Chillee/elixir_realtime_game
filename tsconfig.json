@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "allowUnusedLabels": false,
-    "module": "commonjs",
     "target": "es6",
+    "module": "commonjs",
     "noImplicitAny": true,
     "noImplicitReturns": true,
     "suppressImplicitAnyIndexErrors": true,
@@ -10,6 +10,7 @@
       "es6",
       "dom"
     ],
+    "outDir": "web/static/js",
     "sourceMap": true,
     "strictNullChecks": true,
     "experimentalDecorators": true
