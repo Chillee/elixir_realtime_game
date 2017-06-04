@@ -18,6 +18,7 @@ export class PlayerState {
     this.id = id;
   }
 }
+
 export class GameState {
   user_id: number;
   fps = 60;

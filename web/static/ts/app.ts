@@ -9,10 +9,6 @@ import { GameState, PlayerState } from "./state";
 import { Level, Collidable, PlayerBlock } from "./entities";
 import { Game } from "./game";
 
-
-
-
-
 class App {
   static socket: Socket;
   static roomChan: Channel;

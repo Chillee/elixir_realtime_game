@@ -1463,6 +1463,7 @@ var App = function () {
             var _this = this;
 
             this.init();
+            console.log("YOOO");
             // chan.onClose(e => console.log("channel closed", e))
             this.game = new game_1.Game();
             var game = this.game;
