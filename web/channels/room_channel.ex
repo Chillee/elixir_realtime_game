@@ -31,7 +31,7 @@ defmodule Chat.RoomChannel do
   end
 
   def handle_in("sudoku", msg, socket) do
-    broadcast! socket, "remove_player", msg
+    broadcast! socket, "remove_player", %{data: msg, new_id: :rand.uniform(100000)}
     broadcast! socket, "add_block", msg
     Chat.BlockState.insert(msg);
     {:reply, :ok, socket}
