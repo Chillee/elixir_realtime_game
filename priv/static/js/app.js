@@ -1908,8 +1908,6 @@ var App = function () {
     _createClass(App, null, [{
         key: "init",
         value: function init() {
-            var _this5 = this;
-
             this.socket = new phoenix_1.Socket("/socket", {});
             this.socket.connect();
             this.roomChan = this.socket.channel("rooms:lobby", {});
@@ -1921,6 +1919,21 @@ var App = function () {
             this.roomChan.onError(function (e) {
                 return console.log("something went wrong", e);
             });
+        }
+    }, {
+        key: "run",
+        value: function run() {
+            var _this5 = this;
+
+            this.init();
+            // chan.onClose(e => console.log("channel closed", e))
+            this.game = new Game();
+            var game = this.game;
+            var c = game.canvas;
+            var sheet = game.spriteSheet;
+            var gs = game.state;
+            // Start the game loop
+            game.run(this.roomChan);
             this.roomChan.on("update_pos", function (msg) {
                 if (msg.user_id === _this5.game.user_id) {
                     return;
@@ -1967,19 +1980,6 @@ var App = function () {
                     }
                 }
             });
-        }
-    }, {
-        key: "run",
-        value: function run() {
-            this.init();
-            // chan.onClose(e => console.log("channel closed", e))
-            this.game = new Game();
-            var game = this.game;
-            var c = game.canvas;
-            var sheet = game.spriteSheet;
-            var gs = game.state;
-            // Start the game loop
-            game.run(this.roomChan);
         }
     }]);
 

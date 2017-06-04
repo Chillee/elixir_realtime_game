@@ -368,17 +368,6 @@ class App {
             }
         });
     }
-    static run() {
-        this.init();
-        // chan.onClose(e => console.log("channel closed", e))
-        this.game = new Game();
-        const game = this.game;
-        const c = game.canvas;
-        const sheet = game.spriteSheet;
-        const gs = game.state;
-        // Start the game loop
-        game.run(this.roomChan);
-    }
 }
 App.run();
 exports.default = App;
