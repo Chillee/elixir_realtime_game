@@ -67,6 +67,24 @@ export class Flag implements Collidable {
   }
 }
 
+export class ScoringArea implements Collidable {
+  x = 0;
+  y = 0;
+  w = Constants.PLAYER_W;
+  h = Constants.PLAYER_H;
+  left = 0;
+  right = 0;
+  top = 0;
+  bottom = 0;
+  team = 0;
+
+  constructor(x: number, y: number, team: number) {
+    this.x = x;
+    this.y = y;
+    this.team = team;
+  }
+}
+
 export class Spike implements Collidable {
   x = 0;
   y = 0;
@@ -100,6 +118,10 @@ export class Level {
     let flag = new Flag(x, y, team);
     this.collidables.push(flag);
     return flag;
+  }
+
+  addScoringArea(x: number, y: number, team: number) {
+    this.collidables.push(new ScoringArea(x, y, team));
   }
 
   create(gs: GameState) {
@@ -137,10 +159,18 @@ export class Level {
             this.addSpike(x * 32, y * 32);
           }
           if (r === 255 && g === 0 && b === 255) {
+            this.addScoringArea(x * 32, y * 32, 0);
             gs.flags[0] = this.addFlag(x * 32, y * 32, 0);
           }
           if (r === 0 && g === 0 && b === 255) {
+            this.addScoringArea(x * 32, y * 32, 1);
             gs.flags[1] = this.addFlag(x * 32, y * 32, 1);
+          }
+          if (r === 0 && g === 0 && b === 128) {
+            this.addScoringArea(x * 32, y * 32, 1);
+          }
+          if (r === 128 && g === 0 && b === 128) {
+            this.addScoringArea(x * 32, y * 32, 0);
           }
         }
       }

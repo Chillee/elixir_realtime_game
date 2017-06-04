@@ -9,10 +9,6 @@ defmodule Chat.OverViewState do
         GenServer.call(:overview_state, {:take_flag, msg})
     end
 
-    def score_flag(data) do
-        GenServer.cast(:overview_state, {:return_flag, data})
-    end
-
     def val() do
         GenServer.call(:overview_state, :val)
     end
