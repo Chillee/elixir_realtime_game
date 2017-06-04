@@ -1534,11 +1534,11 @@ var App = function () {
                 _this2.game.state.level.collidables.push(new entities_1.PlayerBlock(data.x, data.y, data.id, data.team));
             });
             this.roomChan.on("overview_data", function (data) {
+                console.log(data);
                 for (var i = 0; i < constants_1.Constants.TEAMS; i++) {
                     _this2.game.state.flags[i].holding_id = data.flag_holder[i];
                 }
                 _this2.game.state.score = data.score;
-                console.log(_this2.game.state.score);
             });
         }
     }]);

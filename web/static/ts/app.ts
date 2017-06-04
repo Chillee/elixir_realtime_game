@@ -76,11 +76,11 @@ class App {
     });
 
     this.roomChan.on("overview_data", (data : { flag_holder: Array<number | null>, score: Array<number> }) => {
+      console.log(data);
       for (let i = 0; i < Constants.TEAMS; i++) {
         this.game.state.flags[i].holding_id = data.flag_holder[i];
       }
       this.game.state.score = data.score;
-      console.log(this.game.state.score);
     });
   }
 

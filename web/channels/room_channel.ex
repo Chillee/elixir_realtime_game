@@ -27,7 +27,7 @@ defmodule Chat.RoomChannel do
 
   def terminate(reason, socket) do
     Logger.debug"> leave #{inspect reason}"
-    send(self(), {"sudoku", socket.assigns.player_data, socket})
+    handle_in("sudoku", socket.assigns.player_data, socket)
     :ok 
   end
 
@@ -37,6 +37,7 @@ defmodule Chat.RoomChannel do
   end
 
   def handle_in("sudoku", msg, socket) do
+    Chat.OverViewState.remove_flag(msg)
     broadcast! socket, "remove_player", %{data: msg, new_id: :rand.uniform(100000)}
     broadcast! socket, "add_block", msg
     Chat.BlockState.insert(msg);
@@ -44,6 +45,7 @@ defmodule Chat.RoomChannel do
   end
 
   def handle_in("death", msg, socket) do
+    Chat.OverViewState.remove_flag(msg)
     broadcast! socket, "remove_player", %{data: msg, new_id: :rand.uniform(100000)}
     {:reply, :ok, socket}
   end
