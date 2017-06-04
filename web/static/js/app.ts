@@ -88,6 +88,22 @@ class Block implements Collidable {
   }
 }
 
+class PlayerBlock implements Collidable {
+  x = 0;
+  y = 0;
+  w = Constants.PLAYER_W;
+  h = Constants.PLAYER_H;
+  left = 0;
+  right = 0;
+  top = 0;
+  bottom = 0;
+
+  constructor(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+  }
+}
+
 class Spike implements Collidable {
   x = 0;
   y = 0;
@@ -222,23 +238,39 @@ class Game {
       user.y += user.dy;
       for (const obj of this.level.collidables) {
         if (this.checkCollision(user, obj)) {
-          if (user.dy > 0) {
-            user.dy = 0;
-            user.can_jump = true;
-            user.y = obj.y - Constants.PLAYER_H + obj.top;
+          if (obj instanceof PlayerBlock) {
+            user.y -= user.dy;
+            if (!this.checkCollision(user, obj)) {
+              user.y += user.dy;
+              if (user.dy > 0) {
+                user.dy = 0;
+                user.can_jump = true;
+                user.y = obj.y - Constants.PLAYER_H + obj.top;
+              }
+            }
+            else {
+              user.y += user.dy;
+            }
           }
           else {
-            user.dy = 0;
-            user.y = obj.y + obj.h - user.top - obj.bottom;
-          }
-          if (obj instanceof Spike) {
-            this.killPlayer();
+            if (user.dy > 0) {
+              user.dy = 0;
+              user.can_jump = true;
+              user.y = obj.y - Constants.PLAYER_H + obj.top;
+            }
+            else {
+              user.dy = 0;
+              user.y = obj.y + obj.h - user.top - obj.bottom;
+            }
+            if (obj instanceof Spike) {
+              this.killPlayer();
+            }
           }
         }
       }
       user.x += user.dx;
       for (const obj of this.level.collidables) {
-        if (this.checkCollision(user, obj)) {
+        if (this.checkCollision(user, obj) && !(obj instanceof PlayerBlock)) {
           if (user.dx > 0) {
             user.x = obj.x - Constants.PLAYER_W + user.right + obj.left;
           }
@@ -258,6 +290,8 @@ class Game {
       const user = this.state.userState;
 
       for (const obj of this.level.collidables) {
+        if (obj instanceof PlayerBlock)
+          ctx.fillRect(obj.x - Camera.x, obj.y - Camera.y, obj.w, obj.h);
         if (obj instanceof Block)
           ctx.fillRect(obj.x - Camera.x, obj.y - Camera.y, obj.w, obj.h);
         if (obj instanceof Spike)
@@ -438,7 +472,7 @@ class App {
 
     this.roomChan.on("world_data", (data) => {
       for (const player of data.players) {
-        this.game.state.playerStates.push(new PlayerState(player.x, player.y, -1));
+        this.game.level.collidables.push(new PlayerBlock(player.x, player.y));
       }
     })
   }
