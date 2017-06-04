@@ -67,7 +67,7 @@ export class Game {
       this.state.user_team,
       this.state.user_nickname
     ));
-    this.killPlayer();
+    this.teleportPlayer();
   }
 
   private killPlayer() {

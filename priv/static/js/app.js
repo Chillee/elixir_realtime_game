@@ -1537,12 +1537,8 @@ var App = function () {
                 for (var i = 0; i < constants_1.Constants.TEAMS; i++) {
                     _this2.game.state.flags[i].holding_id = data.flag_holder[i];
                 }
-<<<<<<< HEAD
-                _this.game.state.score = data.score;
-                console.log(_this.game.state.score);
-=======
                 _this2.game.state.score = data.score;
->>>>>>> 524202baf2775de9fd8a9a893695b0da82898f9e
+                console.log(_this2.game.state.score);
             });
         }
     }]);
@@ -1891,7 +1887,7 @@ var Game = function () {
         key: "sudoku",
         value: function sudoku() {
             this.state.roomChan.push("sudoku", new PlayerData(this.state.userState.x, this.state.userState.y, this.state.user_id, this.state.user_team, this.state.user_nickname));
-            this.killPlayer();
+            this.teleportPlayer();
         }
     }, {
         key: "killPlayer",
