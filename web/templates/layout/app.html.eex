@@ -13,7 +13,7 @@
 
   <body>
     <!-- Fixed navbar -->
-    <canvas id="gameCanvas" width="640" height="480" style="display: block;
+    <canvas id="gameCanvas" width="640" height="640" style="display: block;
     margin: 0 auto; border:1px solid #000000"></canvas>
 
 
