@@ -1543,6 +1543,8 @@ var App = function () {
                 for (var i = 0; i < constants_1.Constants.TEAMS; i++) {
                     _this.game.state.flags[i].holding_id = data.flag_holder[i];
                 }
+                console.log(_this.game.state.flags);
+                console.log(_this.game.state.playerStates);
                 _this.game.state.score = data.score;
             });
         }
@@ -1840,7 +1842,7 @@ var Game = function () {
         value: function takeFlag(flag) {
             this.state.roomChan.push("take_flag", {
                 id: this.state.user_id,
-                team: this.state.user_team
+                team: flag.team
             }).receive("fail", function () {
                 flag.holding_id = null;
             });
@@ -2082,7 +2084,7 @@ var Game = function () {
                                     if (_flag.team === 0) {
                                         ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 2, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, player.x - camera_1.Camera.x, player.y - camera_1.Camera.y - constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                                     } else if (_flag.team === 1) {
-                                        ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 3, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, user.x - camera_1.Camera.x, user.y - camera_1.Camera.y - constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
+                                        ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 3, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, player.x - camera_1.Camera.x, player.y - camera_1.Camera.y - constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                                     }
                                 }
                             }

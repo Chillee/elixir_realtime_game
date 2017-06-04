@@ -31,9 +31,9 @@ defmodule Chat.RoomChannel do
     :ok 
   end
 
-  def handle_in("overview_data", msg, socket) do
+  def handle_info(:overview_data, socket) do
     push socket, "overview_data", Chat.OverViewState.val()
-    {:reply, :ok, socket}
+    {:noreply, socket}
   end
   def handle_in("sudoku", msg, socket) do
     broadcast! socket, "remove_player", %{data: msg, new_id: :rand.uniform(100000)}

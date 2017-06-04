@@ -41,7 +41,7 @@ export class Game {
   private takeFlag(flag: Flag) {
     this.state.roomChan.push("take_flag", {
       id: this.state.user_id,
-      team: this.state.user_team
+      team: flag.team
     }).receive("fail", () => {
       flag.holding_id = null;
     });
@@ -209,7 +209,7 @@ export class Game {
             if (flag.team === 0) {
               ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 2, 0, Constants.PLAYER_W, Constants.PLAYER_H, player.x - Camera.x, player.y - Camera.y - Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H);
             } else if (flag.team === 1) {
-              ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 3, 0, Constants.PLAYER_W, Constants.PLAYER_H, user.x - Camera.x, user.y - Camera.y - Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H);
+              ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 3, 0, Constants.PLAYER_W, Constants.PLAYER_H, player.x - Camera.x, player.y - Camera.y - Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H);
             }
           }
         }
