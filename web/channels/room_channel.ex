@@ -37,6 +37,11 @@ defmodule Chat.RoomChannel do
     {:reply, :ok, socket}
   end
 
+  def handle_in("death", msg, socket) do
+    broadcast! socket, "remove_player", %{data: msg, new_id: :rand.uniform(100000)}
+    {:reply, :ok, socket}
+  end
+
   def handle_in("take_flag", msg, socket) do
     case Chat.OverViewState.take_flag(msg) do
       {:reply, {:fail}, _} -> {:reply, :fail, socket}
