@@ -14,20 +14,27 @@ class App {
   static roomChan: Channel;
   static game: Game;
 
-  private static init() {
+  public static start() {
     this.socket = new Socket("/socket", {})
     this.socket.connect();
     this.roomChan = this.socket.channel("rooms:lobby", {})
     this.roomChan.join().receive("ignore", () => console.log("auth error"))
       .receive("ok", () => { console.log("join ok") })
     this.roomChan.onError(e => console.log("something went wrong", e))
+
+    this.roomChan.on("init_data", (data : { blocks: Array<PlayerData>, id: number, team: number }) => {
+      this.run(data.id, data.team);
+
+      for (const block of data.blocks) {
+        this.game.state.level.collidables.push(new PlayerBlock(block.x, block.y, block.id, block.team));
+      }
+    });
   }
 
-  public static run() {
-    this.init();
+  public static run(id: number, team: number) {
     // chan.onClose(e => console.log("channel closed", e))
 
-    this.game = new Game();
+    this.game = new Game(id, team);
     this.game.state.roomChan = this.roomChan;
     const game = this.game;
     const c = game.canvas;
@@ -59,19 +66,9 @@ class App {
         this.game.state.playerStates.splice(player_idx, 1);
       } else {
         const new_id = Math.floor(Math.random() * 10000);
-        (this.game.state.playerStates.find(x => x.id === data.id) as PlayerState).id = new_id;
+        this.game.state.userState.id = new_id;
         this.game.state.user_id = new_id;
       }
-    });
-
-    this.roomChan.on("init_data", (data : { blocks: Array<PlayerData>, id: number, team: number }) => {
-      for (const block of data.blocks) {
-        this.game.state.level.collidables.push(new PlayerBlock(block.x, block.y, block.id, block.team));
-      }
-      (this.game.state.playerStates.find(x => x.id === this.game.state.user_id) as PlayerState).id = data.id;
-      this.game.state.user_id = data.id;
-
-      // this.game.state.user_team = data.team;
     });
 
     this.roomChan.on("add_block", (data: PlayerData) => {
@@ -89,6 +86,6 @@ class App {
 
 }
 
-App.run();
+App.start();
 
 export default App
