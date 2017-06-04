@@ -42,3 +42,8 @@ body > .container {
 code {
   font-size: 80%;
 }
+
+@font-face {
+  font-family: PixelFont;
+  src: url("../images/3Dventure.ttf");
+}

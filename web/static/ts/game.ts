@@ -252,6 +252,26 @@ export class Game {
         ctx.fillRect(Math.floor(player.x) - Camera.x, Math.floor(player.y) - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
       }
 
+      let scoreText = "";
+      for (let i = 0; i < Constants.TEAMS; i++) {
+        scoreText += `Team ${Constants.TEAM_NAMES[i]} score: ${this.state.scores[i]}\n`;
+      }
+
+      ctx.font = '64px PixelFont';
+      ctx.textBaseline = 'top';
+      let textPadding = {
+        x: 10,
+        y: 0
+      };
+
+      let team0Score = `${this.state.scores[0]}`;
+      ctx.fillStyle = 'rgb(255, 255, 255)';
+      ctx.fillText(team0Score, textPadding.x, textPadding.y);
+
+      let team1Score = `${this.state.scores[1]}`;
+      ctx.fillStyle = 'rgb(172, 35, 48)';
+      ctx.fillText(team1Score, Constants.W - ctx.measureText(team1Score).width - textPadding.x, textPadding.y);
+
       if (this.state.deathAnimFrame >= 5) {
         this.state.deathAnimFrame--;
         ctx.fillStyle = 'rgb(0, 0, 0)';
