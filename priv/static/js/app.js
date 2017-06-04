@@ -1533,6 +1533,11 @@ var App = function () {
             this.roomChan.on("add_block", function (data) {
                 _this2.game.state.level.collidables.push(new entities_1.PlayerBlock(data.x, data.y, data.id, data.team));
             });
+            this.roomChan.on("remove_blocks", function (ids) {
+                _this2.game.state.level.collidables = _this2.game.state.level.collidables.filter(function (x) {
+                    return !(x instanceof entities_1.PlayerBlock && ids.indexOf(x.id) !== -1);
+                });
+            });
             this.roomChan.on("overview_data", function (data) {
                 for (var i = 0; i < constants_1.Constants.TEAMS; i++) {
                     _this2.game.state.flags[i].holding_id = data.flag_holder[i];
@@ -1566,10 +1571,14 @@ var Camera = function () {
     }
 
     _createClass(Camera, null, [{
-        key: "update",
-        value: function update(user) {
+        key: "updateTarget",
+        value: function updateTarget(user) {
             this.targetX = user.x + constants_1.Constants.PLAYER_W / 2 - constants_1.Constants.W / 2;
             this.targetY = user.y + constants_1.Constants.PLAYER_H / 2 - constants_1.Constants.H / 2;
+        }
+    }, {
+        key: "update",
+        value: function update() {
             this.cx += (this.targetX - this.cx) * 0.1;
             this.cy += (this.targetY - this.cy) * 0.1;
             if (this.cx > constants_1.Constants.LEVEL_W - constants_1.Constants.W) this.cx = constants_1.Constants.LEVEL_W - constants_1.Constants.W;
@@ -1613,6 +1622,7 @@ var Constants = function Constants() {
 
 Constants.TEAMS = 2;
 Constants.TEAM_NAMES = ["White", "Red"];
+Constants.DESTROY_RADIUS = 10000;
 Constants.PLAYER_W = 32;
 Constants.PLAYER_H = 32;
 Constants.W = 640;
@@ -1890,9 +1900,50 @@ var Game = function () {
             flag.holding_id = null;
         }
     }, {
+        key: "blockInRange",
+        value: function blockInRange(block) {
+            var blockX = block.x + block.w / 2;
+            var blockY = block.y + block.h / 2;
+            var pX = this.state.userState.x + constants_1.Constants.PLAYER_W / 2;
+            var pY = this.state.userState.x + constants_1.Constants.PLAYER_W / 2;
+            if (Math.hypot(blockX - pX, blockY - pY) < constants_1.Constants.DESTROY_RADIUS) {
+                return true;
+            }
+            return false;
+        }
+    }, {
         key: "sudoku",
         value: function sudoku() {
             this.state.roomChan.push("sudoku", new PlayerData(this.state.userState.x, this.state.userState.y, this.state.user_id, this.state.user_team, this.state.user_nickname));
+            var ids = new Array();
+            var _iteratorNormalCompletion = true;
+            var _didIteratorError = false;
+            var _iteratorError = undefined;
+
+            try {
+                for (var _iterator = this.state.level.collidables[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                    var obj = _step.value;
+
+                    if (obj instanceof entities_1.PlayerBlock && obj.team != this.state.user_team && this.blockInRange(obj)) {
+                        ids.push(obj.id);
+                    }
+                }
+            } catch (err) {
+                _didIteratorError = true;
+                _iteratorError = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion && _iterator.return) {
+                        _iterator.return();
+                    }
+                } finally {
+                    if (_didIteratorError) {
+                        throw _iteratorError;
+                    }
+                }
+            }
+
+            this.state.roomChan.push("remove_blocks", ids);
             this.teleportPlayer();
         }
     }, {
@@ -1904,7 +1955,7 @@ var Game = function () {
     }, {
         key: "teleportPlayer",
         value: function teleportPlayer() {
-            this.state.deathAnimFrame = 10;
+            this.state.deathAnimFrame = 30;
             this.state.userState.x = this.state.level.spawnX;
             this.state.userState.y = this.state.level.spawnY;
             this.state.userState.dx = 0;
@@ -1921,40 +1972,40 @@ var Game = function () {
                 var user = gs.userState;
                 user.can_jump = false;
                 user.y += user.dy;
-                var _iteratorNormalCompletion = true;
-                var _didIteratorError = false;
-                var _iteratorError = undefined;
+                var _iteratorNormalCompletion2 = true;
+                var _didIteratorError2 = false;
+                var _iteratorError2 = undefined;
 
                 try {
-                    for (var _iterator = _this.state.level.collidables[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                        var obj = _step.value;
+                    for (var _iterator2 = _this.state.level.collidables[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                        var obj = _step2.value;
 
                         if (_this.checkCollision(user, obj)) {
                             if (obj instanceof entities_1.ScoringArea) {
                                 if (obj.team === _this.state.user_team) {
-                                    var _iteratorNormalCompletion3 = true;
-                                    var _didIteratorError3 = false;
-                                    var _iteratorError3 = undefined;
+                                    var _iteratorNormalCompletion4 = true;
+                                    var _didIteratorError4 = false;
+                                    var _iteratorError4 = undefined;
 
                                     try {
-                                        for (var _iterator3 = _this.state.flags[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-                                            var flag = _step3.value;
+                                        for (var _iterator4 = _this.state.flags[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+                                            var flag = _step4.value;
 
                                             if (flag.holding_id === _this.state.user_id) {
                                                 _this.scoreFlag(flag);
                                             }
                                         }
                                     } catch (err) {
-                                        _didIteratorError3 = true;
-                                        _iteratorError3 = err;
+                                        _didIteratorError4 = true;
+                                        _iteratorError4 = err;
                                     } finally {
                                         try {
-                                            if (!_iteratorNormalCompletion3 && _iterator3.return) {
-                                                _iterator3.return();
+                                            if (!_iteratorNormalCompletion4 && _iterator4.return) {
+                                                _iterator4.return();
                                             }
                                         } finally {
-                                            if (_didIteratorError3) {
-                                                throw _iteratorError3;
+                                            if (_didIteratorError4) {
+                                                throw _iteratorError4;
                                             }
                                         }
                                     }
@@ -1992,55 +2043,55 @@ var Game = function () {
                         }
                     }
                 } catch (err) {
-                    _didIteratorError = true;
-                    _iteratorError = err;
+                    _didIteratorError2 = true;
+                    _iteratorError2 = err;
                 } finally {
                     try {
-                        if (!_iteratorNormalCompletion && _iterator.return) {
-                            _iterator.return();
+                        if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                            _iterator2.return();
                         }
                     } finally {
-                        if (_didIteratorError) {
-                            throw _iteratorError;
+                        if (_didIteratorError2) {
+                            throw _iteratorError2;
                         }
                     }
                 }
 
                 user.x += user.dx;
-                var _iteratorNormalCompletion2 = true;
-                var _didIteratorError2 = false;
-                var _iteratorError2 = undefined;
+                var _iteratorNormalCompletion3 = true;
+                var _didIteratorError3 = false;
+                var _iteratorError3 = undefined;
 
                 try {
-                    for (var _iterator2 = _this.state.level.collidables[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-                        var _obj = _step2.value;
+                    for (var _iterator3 = _this.state.level.collidables[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+                        var _obj = _step3.value;
 
                         if (_this.checkCollision(user, _obj) && !(_obj instanceof entities_1.PlayerBlock)) {
                             if (_obj instanceof entities_1.ScoringArea) {
                                 if (_obj.team === _this.state.user_team) {
-                                    var _iteratorNormalCompletion4 = true;
-                                    var _didIteratorError4 = false;
-                                    var _iteratorError4 = undefined;
+                                    var _iteratorNormalCompletion5 = true;
+                                    var _didIteratorError5 = false;
+                                    var _iteratorError5 = undefined;
 
                                     try {
-                                        for (var _iterator4 = _this.state.flags[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-                                            var _flag = _step4.value;
+                                        for (var _iterator5 = _this.state.flags[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+                                            var _flag = _step5.value;
 
                                             if (_flag.holding_id === _this.state.user_id) {
                                                 _this.scoreFlag(_flag);
                                             }
                                         }
                                     } catch (err) {
-                                        _didIteratorError4 = true;
-                                        _iteratorError4 = err;
+                                        _didIteratorError5 = true;
+                                        _iteratorError5 = err;
                                     } finally {
                                         try {
-                                            if (!_iteratorNormalCompletion4 && _iterator4.return) {
-                                                _iterator4.return();
+                                            if (!_iteratorNormalCompletion5 && _iterator5.return) {
+                                                _iterator5.return();
                                             }
                                         } finally {
-                                            if (_didIteratorError4) {
-                                                throw _iteratorError4;
+                                            if (_didIteratorError5) {
+                                                throw _iteratorError5;
                                             }
                                         }
                                     }
@@ -2060,16 +2111,16 @@ var Game = function () {
                         }
                     }
                 } catch (err) {
-                    _didIteratorError2 = true;
-                    _iteratorError2 = err;
+                    _didIteratorError3 = true;
+                    _iteratorError3 = err;
                 } finally {
                     try {
-                        if (!_iteratorNormalCompletion2 && _iterator2.return) {
-                            _iterator2.return();
+                        if (!_iteratorNormalCompletion3 && _iterator3.return) {
+                            _iterator3.return();
                         }
                     } finally {
-                        if (_didIteratorError2) {
-                            throw _iteratorError2;
+                        if (_didIteratorError3) {
+                            throw _iteratorError3;
                         }
                     }
                 }
@@ -2081,13 +2132,13 @@ var Game = function () {
                 ctx.fillRect(0, 0, constants_1.Constants.W, constants_1.Constants.H);
                 ctx.fillStyle = 'rgb(0, 0, 0)';
                 var user = _this.state.userState;
-                var _iteratorNormalCompletion5 = true;
-                var _didIteratorError5 = false;
-                var _iteratorError5 = undefined;
+                var _iteratorNormalCompletion6 = true;
+                var _didIteratorError6 = false;
+                var _iteratorError6 = undefined;
 
                 try {
-                    for (var _iterator5 = _this.state.level.collidables[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-                        var obj = _step5.value;
+                    for (var _iterator6 = _this.state.level.collidables[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+                        var obj = _step6.value;
 
                         if (obj instanceof entities_1.PlayerBlock) ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 5, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, obj.x - camera_1.Camera.x, obj.y - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                         if (obj instanceof entities_1.Block) ctx.fillRect(obj.x - camera_1.Camera.x, obj.y - camera_1.Camera.y, obj.w, obj.h);
@@ -2108,16 +2159,16 @@ var Game = function () {
                         }
                     }
                 } catch (err) {
-                    _didIteratorError5 = true;
-                    _iteratorError5 = err;
+                    _didIteratorError6 = true;
+                    _iteratorError6 = err;
                 } finally {
                     try {
-                        if (!_iteratorNormalCompletion5 && _iterator5.return) {
-                            _iterator5.return();
+                        if (!_iteratorNormalCompletion6 && _iterator6.return) {
+                            _iterator6.return();
                         }
                     } finally {
-                        if (_didIteratorError5) {
-                            throw _iteratorError5;
+                        if (_didIteratorError6) {
+                            throw _iteratorError6;
                         }
                     }
                 }
@@ -2140,13 +2191,13 @@ var Game = function () {
                         ctx.drawImage(_this.spriteSheet, 0, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, Math.floor(user.x) - camera_1.Camera.x, Math.floor(user.y) - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                     }
                 }
-                var _iteratorNormalCompletion6 = true;
-                var _didIteratorError6 = false;
-                var _iteratorError6 = undefined;
+                var _iteratorNormalCompletion7 = true;
+                var _didIteratorError7 = false;
+                var _iteratorError7 = undefined;
 
                 try {
-                    for (var _iterator6 = _this.state.flags[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-                        var flag = _step6.value;
+                    for (var _iterator7 = _this.state.flags[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+                        var flag = _step7.value;
 
                         if (flag.holding_id === _this.state.user_id) {
                             if (flag.team === 0) {
@@ -2155,61 +2206,6 @@ var Game = function () {
                                 ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 3, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, Math.floor(user.x) - camera_1.Camera.x, Math.floor(user.y) - camera_1.Camera.y - constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                             }
                         }
-                    }
-                } catch (err) {
-                    _didIteratorError6 = true;
-                    _iteratorError6 = err;
-                } finally {
-                    try {
-                        if (!_iteratorNormalCompletion6 && _iterator6.return) {
-                            _iterator6.return();
-                        }
-                    } finally {
-                        if (_didIteratorError6) {
-                            throw _iteratorError6;
-                        }
-                    }
-                }
-
-                var _iteratorNormalCompletion7 = true;
-                var _didIteratorError7 = false;
-                var _iteratorError7 = undefined;
-
-                try {
-                    for (var _iterator7 = _this.state.nonUserStates[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-                        var player = _step7.value;
-                        var _iteratorNormalCompletion8 = true;
-                        var _didIteratorError8 = false;
-                        var _iteratorError8 = undefined;
-
-                        try {
-                            for (var _iterator8 = _this.state.flags[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-                                var _flag2 = _step8.value;
-
-                                if (_flag2.holding_id === player.id) {
-                                    if (_flag2.team === 0) {
-                                        ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 2, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, Math.floor(player.x) - camera_1.Camera.x, Math.floor(player.y) - camera_1.Camera.y - constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
-                                    } else if (_flag2.team === 1) {
-                                        ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 3, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, Math.floor(player.x) - camera_1.Camera.x, Math.floor(player.y) - camera_1.Camera.y - constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
-                                    }
-                                }
-                            }
-                        } catch (err) {
-                            _didIteratorError8 = true;
-                            _iteratorError8 = err;
-                        } finally {
-                            try {
-                                if (!_iteratorNormalCompletion8 && _iterator8.return) {
-                                    _iterator8.return();
-                                }
-                            } finally {
-                                if (_didIteratorError8) {
-                                    throw _iteratorError8;
-                                }
-                            }
-                        }
-
-                        ctx.fillRect(Math.floor(player.x) - camera_1.Camera.x, Math.floor(player.y) - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                     }
                 } catch (err) {
                     _didIteratorError7 = true;
@@ -2222,6 +2218,61 @@ var Game = function () {
                     } finally {
                         if (_didIteratorError7) {
                             throw _iteratorError7;
+                        }
+                    }
+                }
+
+                var _iteratorNormalCompletion8 = true;
+                var _didIteratorError8 = false;
+                var _iteratorError8 = undefined;
+
+                try {
+                    for (var _iterator8 = _this.state.nonUserStates[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+                        var player = _step8.value;
+                        var _iteratorNormalCompletion9 = true;
+                        var _didIteratorError9 = false;
+                        var _iteratorError9 = undefined;
+
+                        try {
+                            for (var _iterator9 = _this.state.flags[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+                                var _flag2 = _step9.value;
+
+                                if (_flag2.holding_id === player.id) {
+                                    if (_flag2.team === 0) {
+                                        ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 2, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, Math.floor(player.x) - camera_1.Camera.x, Math.floor(player.y) - camera_1.Camera.y - constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
+                                    } else if (_flag2.team === 1) {
+                                        ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 3, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, Math.floor(player.x) - camera_1.Camera.x, Math.floor(player.y) - camera_1.Camera.y - constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
+                                    }
+                                }
+                            }
+                        } catch (err) {
+                            _didIteratorError9 = true;
+                            _iteratorError9 = err;
+                        } finally {
+                            try {
+                                if (!_iteratorNormalCompletion9 && _iterator9.return) {
+                                    _iterator9.return();
+                                }
+                            } finally {
+                                if (_didIteratorError9) {
+                                    throw _iteratorError9;
+                                }
+                            }
+                        }
+
+                        ctx.fillRect(Math.floor(player.x) - camera_1.Camera.x, Math.floor(player.y) - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
+                    }
+                } catch (err) {
+                    _didIteratorError8 = true;
+                    _iteratorError8 = err;
+                } finally {
+                    try {
+                        if (!_iteratorNormalCompletion8 && _iterator8.return) {
+                            _iterator8.return();
+                        }
+                    } finally {
+                        if (_didIteratorError8) {
+                            throw _iteratorError8;
                         }
                     }
                 }
@@ -2242,15 +2293,6 @@ var Game = function () {
                 var team1Score = "" + _this.state.scores[1];
                 ctx.fillStyle = 'rgb(172, 35, 48)';
                 ctx.fillText(team1Score, constants_1.Constants.W - ctx.measureText(team1Score).width - textPadding.x, textPadding.y);
-                if (_this.state.deathAnimFrame >= 5) {
-                    _this.state.deathAnimFrame--;
-                    ctx.fillStyle = 'rgb(0, 0, 0)';
-                    ctx.fillRect(0, 0, constants_1.Constants.W, constants_1.Constants.H);
-                } else if (_this.state.deathAnimFrame > 0) {
-                    _this.state.deathAnimFrame--;
-                    ctx.fillStyle = 'rgb(255, 255, 255)';
-                    ctx.fillRect(0, 0, constants_1.Constants.W, constants_1.Constants.H);
-                }
             };
             var Key = {
                 _pressed: {},
@@ -2316,7 +2358,12 @@ var Game = function () {
                 collisions();
                 check_bounds(user);
                 user.dy += 0.7;
-                camera_1.Camera.update(user);
+                if (_this.state.deathAnimFrame === 0) {
+                    camera_1.Camera.updateTarget(user);
+                } else {
+                    _this.state.deathAnimFrame--;
+                }
+                camera_1.Camera.update();
             };
             var push = function push() {
                 _this.state.roomChan.push("update_player", new PlayerData(_this.state.userState.x, _this.state.userState.y, _this.state.user_id, _this.state.user_team, _this.state.user_nickname));
