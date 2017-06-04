@@ -38,6 +38,9 @@ defmodule Chat.OverViewState do
 
     def handle_cast({:remove_flag, %{"id" => id}}, data) do
         %{flag_holder: flags} = data
+        IO.inspect(id)
+        IO.inspect(flags)
+        IO.inspect(Enum.map(flags, fn(x) -> if x === id do nil else x end end))
         {:noreply, %{data | flag_holder: Enum.map(flags, fn(x) -> if x=id do nil else x end end)}}
     end
 
