@@ -25,11 +25,11 @@ export class Game {
   spriteSheet: HTMLImageElement;
   state: GameState;
 
-  constructor() {
+  constructor(id: number, team: number) {
     this.canvas = <HTMLCanvasElement>document.getElementById("gameCanvas");
     this.spriteSheet = new Image();
     this.spriteSheet.src = "images/sheet.png";
-    this.state = new GameState();
+    this.state = new GameState(id, team);
   }
 
   private checkCollision(a: PlayerState, b: Collidable) {
@@ -104,7 +104,7 @@ export class Game {
             if (obj.team === this.state.user_team) {
               for (const flag of this.state.flags) {
                 if (flag.holding_id === this.state.user_id) {
-                  this.scoreFlag();
+                  this.scoreFlag(flag);
                 }
               }
             }
@@ -114,7 +114,7 @@ export class Game {
               user.y += user.dy;
               if (user.dy > 0) {
                 user.dy = 0;
-                user.can_jump = true;
+                user.can_jump = !Key.isDown(Key.UP);
                 user.y = obj.y - Constants.PLAYER_H + obj.top;
               }
             }
@@ -129,7 +129,7 @@ export class Game {
           } else {
             if (user.dy > 0) {
               user.dy = 0;
-              user.can_jump = true;
+              user.can_jump = !Key.isDown(Key.UP);
               user.y = obj.y - Constants.PLAYER_H + obj.top;
             } else {
               user.dy = 0;
@@ -148,7 +148,7 @@ export class Game {
             if (obj.team === this.state.user_team) {
               for (const flag of this.state.flags) {
                 if (flag.holding_id === this.state.user_id) {
-                  this.scoreFlag();
+                  this.scoreFlag(flag);
                 }
               }
             }
@@ -179,7 +179,8 @@ export class Game {
 
       for (const obj of this.state.level.collidables) {
         if (obj instanceof PlayerBlock)
-          ctx.fillRect(obj.x - Camera.x, obj.y - Camera.y, obj.w, obj.h);
+          ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 5, 0, Constants.PLAYER_W, Constants.PLAYER_H,
+            obj.x - Camera.x, obj.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
         if (obj instanceof Block)
           ctx.fillRect(obj.x - Camera.x, obj.y - Camera.y, obj.w, obj.h);
         if (obj instanceof Spike)
@@ -303,10 +304,10 @@ export class Game {
         user.dy = 0;
         user.y = 0;
       }
-      if (user.y > Constants.LEVEL_H - Constants.PLAYER_H) {
+      if (user.y >= Constants.LEVEL_H - Constants.PLAYER_H) {
         user.dy = 0;
         user.y = Constants.LEVEL_H - Constants.PLAYER_H;
-        user.can_jump = true;
+        user.can_jump = !Key.isDown(Key.UP);
       }
     }
 
@@ -335,9 +336,8 @@ export class Game {
         }
       }
       collisions();
-      user.dy += 0.7;
-
       check_bounds(user);
+      user.dy += 0.7;
 
       Camera.update(user);
     }

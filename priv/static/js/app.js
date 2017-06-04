@@ -1444,8 +1444,10 @@ var App = function () {
     }
 
     _createClass(App, null, [{
-        key: "init",
-        value: function init() {
+        key: "start",
+        value: function start() {
+            var _this = this;
+
             this.socket = new phoenix_1.Socket("/socket", {});
             this.socket.connect();
             this.roomChan = this.socket.channel("rooms:lobby", {});
@@ -1457,54 +1459,8 @@ var App = function () {
             this.roomChan.onError(function (e) {
                 return console.log("something went wrong", e);
             });
-        }
-    }, {
-        key: "run",
-        value: function run() {
-            var _this = this;
-
-            this.init();
-            // chan.onClose(e => console.log("channel closed", e))
-            this.game = new game_1.Game();
-            this.game.state.roomChan = this.roomChan;
-            var game = this.game;
-            var c = game.canvas;
-            var sheet = game.spriteSheet;
-            var gs = game.state;
-            // Start the game loop
-            game.run();
-            this.roomChan.on("update_player", function (msg) {
-                if (msg.id === _this.game.state.user_id) {
-                    return;
-                }
-                var changedPlayer = _this.game.state.playerStates.filter(function (x) {
-                    return x.id === msg.id;
-                });
-                if (changedPlayer.length === 1) {
-                    changedPlayer[0].x = msg.x;
-                    changedPlayer[0].y = msg.y;
-                } else if (changedPlayer.length === 0) {
-                    _this.game.state.playerStates.push(new state_1.PlayerState(msg.x, msg.y, msg.id, msg.team));
-                }
-            });
-            this.roomChan.on("remove_player", function (res) {
-                var data = res.data;
-                var new_id = res.new_id;
-                var player_idx = _this.game.state.playerStates.findIndex(function (x) {
-                    return x.id === data.id;
-                });
-                console.log(data.id, _this.game.state.user_id);
-                if (data.id !== _this.game.state.user_id) {
-                    _this.game.state.playerStates.splice(player_idx, 1);
-                } else {
-                    var _new_id = Math.floor(Math.random() * 10000);
-                    _this.game.state.playerStates.find(function (x) {
-                        return x.id === data.id;
-                    }).id = _new_id;
-                    _this.game.state.user_id = _new_id;
-                }
-            });
             this.roomChan.on("init_data", function (data) {
+                _this.run(data.id, data.team);
                 var _iteratorNormalCompletion = true;
                 var _didIteratorError = false;
                 var _iteratorError = undefined;
@@ -1529,21 +1485,59 @@ var App = function () {
                         }
                     }
                 }
+            });
+        }
+    }, {
+        key: "run",
+        value: function run(id, team) {
+            var _this2 = this;
 
-                _this.game.state.playerStates.find(function (x) {
-                    return x.id === _this.game.state.user_id;
-                }).id = data.id;
-                _this.game.state.user_id = data.id;
-                // this.game.state.user_team = data.team;
+            // chan.onClose(e => console.log("channel closed", e))
+            this.game = new game_1.Game(id, team);
+            this.game.state.roomChan = this.roomChan;
+            var game = this.game;
+            var c = game.canvas;
+            var sheet = game.spriteSheet;
+            var gs = game.state;
+            // Start the game loop
+            game.run();
+            this.roomChan.on("update_player", function (msg) {
+                if (msg.id === _this2.game.state.user_id) {
+                    return;
+                }
+                var changedPlayer = _this2.game.state.playerStates.filter(function (x) {
+                    return x.id === msg.id;
+                });
+                if (changedPlayer.length === 1) {
+                    changedPlayer[0].x = msg.x;
+                    changedPlayer[0].y = msg.y;
+                } else if (changedPlayer.length === 0) {
+                    _this2.game.state.playerStates.push(new state_1.PlayerState(msg.x, msg.y, msg.id, msg.team));
+                }
+            });
+            this.roomChan.on("remove_player", function (res) {
+                var data = res.data;
+                var new_id = res.new_id;
+                var player_idx = _this2.game.state.playerStates.findIndex(function (x) {
+                    return x.id === data.id;
+                });
+                console.log(data.id, _this2.game.state.user_id);
+                if (data.id !== _this2.game.state.user_id) {
+                    _this2.game.state.playerStates.splice(player_idx, 1);
+                } else {
+                    var _new_id = Math.floor(Math.random() * 10000);
+                    _this2.game.state.userState.id = _new_id;
+                    _this2.game.state.user_id = _new_id;
+                }
             });
             this.roomChan.on("add_block", function (data) {
-                _this.game.state.level.collidables.push(new entities_1.PlayerBlock(data.x, data.y, data.id, data.team));
+                _this2.game.state.level.collidables.push(new entities_1.PlayerBlock(data.x, data.y, data.id, data.team));
             });
             this.roomChan.on("overview_data", function (data) {
                 for (var i = 0; i < constants_1.Constants.TEAMS; i++) {
-                    _this.game.state.flags[i].holding_id = data.flag_holder[i];
+                    _this2.game.state.flags[i].holding_id = data.flag_holder[i];
                 }
-                _this.game.state.score = data.score;
+                _this2.game.state.score = data.score;
             });
         }
     }]);
@@ -1551,7 +1545,7 @@ var App = function () {
     return App;
 }();
 
-App.run();
+App.start();
 exports.default = App;
 //# sourceMappingURL=app.js.map
 });
@@ -1851,13 +1845,13 @@ var PlayerData = function PlayerData(x, y, id, team, nickname) {
 exports.PlayerData = PlayerData;
 
 var Game = function () {
-    function Game() {
+    function Game(id, team) {
         _classCallCheck(this, Game);
 
         this.canvas = document.getElementById("gameCanvas");
         this.spriteSheet = new Image();
         this.spriteSheet.src = "images/sheet.png";
-        this.state = new state_1.GameState();
+        this.state = new state_1.GameState(id, team);
     }
 
     _createClass(Game, [{
@@ -1940,7 +1934,7 @@ var Game = function () {
                                             var flag = _step3.value;
 
                                             if (flag.holding_id === _this.state.user_id) {
-                                                _this.scoreFlag();
+                                                _this.scoreFlag(flag);
                                             }
                                         }
                                     } catch (err) {
@@ -1964,7 +1958,7 @@ var Game = function () {
                                     user.y += user.dy;
                                     if (user.dy > 0) {
                                         user.dy = 0;
-                                        user.can_jump = true;
+                                        user.can_jump = !Key.isDown(Key.UP);
                                         user.y = obj.y - constants_1.Constants.PLAYER_H + obj.top;
                                     }
                                 } else {
@@ -1978,7 +1972,7 @@ var Game = function () {
                             } else {
                                 if (user.dy > 0) {
                                     user.dy = 0;
-                                    user.can_jump = true;
+                                    user.can_jump = !Key.isDown(Key.UP);
                                     user.y = obj.y - constants_1.Constants.PLAYER_H + obj.top;
                                 } else {
                                     user.dy = 0;
@@ -2026,7 +2020,7 @@ var Game = function () {
                                             var _flag = _step4.value;
 
                                             if (_flag.holding_id === _this.state.user_id) {
-                                                _this.scoreFlag();
+                                                _this.scoreFlag(_flag);
                                             }
                                         }
                                     } catch (err) {
@@ -2088,7 +2082,7 @@ var Game = function () {
                     for (var _iterator5 = _this.state.level.collidables[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
                         var obj = _step5.value;
 
-                        if (obj instanceof entities_1.PlayerBlock) ctx.fillRect(obj.x - camera_1.Camera.x, obj.y - camera_1.Camera.y, obj.w, obj.h);
+                        if (obj instanceof entities_1.PlayerBlock) ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 5, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, obj.x - camera_1.Camera.x, obj.y - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                         if (obj instanceof entities_1.Block) ctx.fillRect(obj.x - camera_1.Camera.x, obj.y - camera_1.Camera.y, obj.w, obj.h);
                         if (obj instanceof entities_1.Spike) ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 4, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, obj.x - camera_1.Camera.x, obj.y - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                         if (obj instanceof entities_1.Flag && obj.holding_id == null) {
@@ -2268,10 +2262,10 @@ var Game = function () {
                     user.dy = 0;
                     user.y = 0;
                 }
-                if (user.y > constants_1.Constants.LEVEL_H - constants_1.Constants.PLAYER_H) {
+                if (user.y >= constants_1.Constants.LEVEL_H - constants_1.Constants.PLAYER_H) {
                     user.dy = 0;
                     user.y = constants_1.Constants.LEVEL_H - constants_1.Constants.PLAYER_H;
-                    user.can_jump = true;
+                    user.can_jump = !Key.isDown(Key.UP);
                 }
             };
             var update = function update() {
@@ -2297,8 +2291,8 @@ var Game = function () {
                     }
                 }
                 collisions();
-                user.dy += 0.7;
                 check_bounds(user);
+                user.dy += 0.7;
                 camera_1.Camera.update(user);
             };
             var push = function push() {
@@ -2355,7 +2349,7 @@ var PlayerState = function PlayerState(x, y, id, team) {
 exports.PlayerState = PlayerState;
 
 var GameState = function () {
-    function GameState() {
+    function GameState(id, team) {
         _classCallCheck(this, GameState);
 
         this.user_id = 0;
@@ -2365,7 +2359,9 @@ var GameState = function () {
         this.user_team = 0;
         this.user_nickname = "horsey";
         this.fps = 60;
-        this.playerStates = new Array(new PlayerState(0, 0, this.user_id, this.user_team));
+        this.playerStates = new Array(new PlayerState(0, 0, id, team));
+        this.user_id = id;
+        this.user_team = team;
         this.score = new Array(constants_1.Constants.TEAMS);
         this.flags = new Array(constants_1.Constants.TEAMS);
         this.level = new entities_1.Level();

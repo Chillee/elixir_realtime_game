@@ -37,8 +37,10 @@ export class GameState {
   fps = 60;
   playerStates: Array<PlayerState>
 
-  constructor() {
-    this.playerStates = new Array(new PlayerState(0, 0, this.user_id, this.user_team));
+  constructor(id: number, team: number) {
+    this.playerStates = new Array(new PlayerState(0, 0, id, team));
+    this.user_id = id;
+    this.user_team = team;
 
     this.score = new Array(Constants.TEAMS);
     this.flags = new Array(Constants.TEAMS);
