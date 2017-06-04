@@ -1471,7 +1471,7 @@ var App = function () {
             var gs = game.state;
             // Start the game loop
             game.run(this.roomChan);
-            this.roomChan.on("update_pos", function (msg) {
+            this.roomChan.on("update_player", function (msg) {
                 if (msg.id === _this.game.user_id) {
                     return;
                 }
@@ -1482,7 +1482,7 @@ var App = function () {
                     changedPlayer[0].x = msg.x;
                     changedPlayer[0].y = msg.y;
                 } else if (changedPlayer.length === 0) {
-                    _this.game.state.playerStates.push(new state_1.PlayerState(msg.x, msg.y, msg.id));
+                    _this.game.state.playerStates.push(new state_1.PlayerState(msg.x, msg.y, msg.id, msg.team));
                 }
             });
             this.roomChan.on("remove_player", function (data) {
@@ -2076,7 +2076,7 @@ var Game = function () {
                 camera_1.Camera.update(user);
             };
             var push = function push() {
-                roomChan.push("update_pos", new PlayerData(_this.state.userState.x, _this.state.userState.y, _this.user_id, _this.state.user_team, _this.state.user_nickname));
+                roomChan.push("update_player", new PlayerData(_this.state.userState.x, _this.state.userState.y, _this.user_id, _this.state.user_team, _this.state.user_nickname));
             };
             setInterval(function () {
                 update();
@@ -2104,7 +2104,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var entities_1 = require("./entities");
 var constants_1 = require("./constants");
 
-var PlayerState = function PlayerState(x, y, id) {
+var PlayerState = function PlayerState(x, y, id, team) {
     _classCallCheck(this, PlayerState);
 
     this.x = 0;
@@ -2119,9 +2119,11 @@ var PlayerState = function PlayerState(x, y, id) {
     this.can_jump = false;
     this.tick = 0;
     this.frame = 0;
+    this.team = 0;
     this.x = x;
     this.y = y;
     this.id = id;
+    this.team = team;
 };
 
 exports.PlayerState = PlayerState;
@@ -2137,7 +2139,7 @@ var GameState = function () {
         this.user_nickname = "horsey";
         this.fps = 60;
         this.user_id = user_id;
-        this.playerStates = new Array(new PlayerState(0, 0, user_id));
+        this.playerStates = new Array(new PlayerState(0, 0, this.user_id, this.user_team));
         this.score = new Array(constants_1.Constants.TEAMS);
         this.flag_holders = new Array(constants_1.Constants.TEAMS);
         this.level = new entities_1.Level();

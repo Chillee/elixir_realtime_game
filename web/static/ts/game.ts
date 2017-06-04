@@ -251,7 +251,7 @@ export class Game {
       Camera.update(user);
     }
     const push = () => {
-      roomChan.push("update_pos", new PlayerData(
+      roomChan.push("update_player", new PlayerData(
         this.state.userState.x,
         this.state.userState.y,
         this.user_id,

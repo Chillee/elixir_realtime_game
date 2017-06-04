@@ -36,7 +36,7 @@ class App {
     // Start the game loop
     game.run(this.roomChan);
 
-    this.roomChan.on("update_pos", (msg: PlayerData) => {
+    this.roomChan.on("update_player", (msg: PlayerData) => {
       if (msg.id === this.game.user_id) {
         return;
       }
@@ -45,7 +45,7 @@ class App {
         changedPlayer[0].x = msg.x;
         changedPlayer[0].y = msg.y;
       } else if (changedPlayer.length === 0) {
-        this.game.state.playerStates.push(new PlayerState(msg.x, msg.y, msg.id));
+        this.game.state.playerStates.push(new PlayerState(msg.x, msg.y, msg.id, msg.team));
       }
     });
 
