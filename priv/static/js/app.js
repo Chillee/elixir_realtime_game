@@ -1472,17 +1472,17 @@ var App = function () {
             // Start the game loop
             game.run(this.roomChan);
             this.roomChan.on("update_pos", function (msg) {
-                if (msg.user_id === _this.game.user_id) {
+                if (msg.id === _this.game.user_id) {
                     return;
                 }
                 var changedPlayer = _this.game.state.playerStates.filter(function (x) {
-                    return x.id === msg.user_id;
+                    return x.id === msg.id;
                 });
                 if (changedPlayer.length === 1) {
                     changedPlayer[0].x = msg.x;
                     changedPlayer[0].y = msg.y;
-                } else {
-                    _this.game.state.playerStates.push(new state_1.PlayerState(msg.x, msg.y, msg.user_id));
+                } else if (changedPlayer.length === 0) {
+                    _this.game.state.playerStates.push(new state_1.PlayerState(msg.x, msg.y, msg.id));
                 }
             });
             this.roomChan.on("remove_player", function (data) {
@@ -1491,16 +1491,16 @@ var App = function () {
                 });
                 _this.game.state.playerStates.splice(player_idx, 1);
             });
-            this.roomChan.on("world_data", function (data) {
+            this.roomChan.on("init_data", function (data) {
                 var _iteratorNormalCompletion = true;
                 var _didIteratorError = false;
                 var _iteratorError = undefined;
 
                 try {
-                    for (var _iterator = data.players[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                        var player = _step.value;
+                    for (var _iterator = data.blocks[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                        var block = _step.value;
 
-                        _this.game.level.collidables.push(new entities_1.PlayerBlock(player.x, player.y));
+                        _this.game.state.level.collidables.push(new entities_1.PlayerBlock(block.x, block.y, block.id, block.team));
                     }
                 } catch (err) {
                     _didIteratorError = true;
@@ -1516,6 +1516,16 @@ var App = function () {
                         }
                     }
                 }
+
+                _this.game.state.user_id = data.id;
+                _this.game.state.user_team = data.team;
+            });
+            this.roomChan.on("add_block", function (data) {
+                _this.game.state.level.collidables.push(new entities_1.PlayerBlock(data.x, data.y, data.id, data.team));
+            });
+            this.roomChan.on("overview_data", function (data) {
+                _this.game.state.flag_holders = data.flag_holder;
+                _this.game.state.score = data.score;
             });
         }
     }]);
@@ -1589,6 +1599,7 @@ var Constants = function Constants() {
   _classCallCheck(this, Constants);
 };
 
+Constants.TEAMS = 2;
 Constants.PLAYER_W = 32;
 Constants.PLAYER_H = 32;
 Constants.W = 640;
@@ -1626,7 +1637,7 @@ var Block = function Block(x, y) {
 
 exports.Block = Block;
 
-var PlayerBlock = function PlayerBlock(x, y) {
+var PlayerBlock = function PlayerBlock(x, y, id, team) {
     _classCallCheck(this, PlayerBlock);
 
     this.x = 0;
@@ -1637,11 +1648,34 @@ var PlayerBlock = function PlayerBlock(x, y) {
     this.right = 0;
     this.top = 0;
     this.bottom = 0;
+    this.id = 0;
+    this.team = 0;
     this.x = x;
     this.y = y;
+    this.id = id;
+    this.team = team;
 };
 
 exports.PlayerBlock = PlayerBlock;
+
+var Flag = function Flag(x, y, team) {
+    _classCallCheck(this, Flag);
+
+    this.x = 0;
+    this.y = 0;
+    this.w = constants_1.Constants.PLAYER_W;
+    this.h = constants_1.Constants.PLAYER_H;
+    this.left = 6;
+    this.right = 6;
+    this.top = 13;
+    this.bottom = 0;
+    this.team = 0;
+    this.x = x;
+    this.y = y;
+    this.team = team;
+};
+
+exports.Flag = Flag;
 
 var Spike = function Spike(x, y) {
     _classCallCheck(this, Spike);
@@ -1666,11 +1700,6 @@ var Level = function () {
     }
 
     _createClass(Level, [{
-        key: "addDeadPlayer",
-        value: function addDeadPlayer(x, y) {
-            // todo
-        }
-    }, {
         key: "addBlock",
         value: function addBlock(x, y) {
             this.collidables.push(new Block(x, y));
@@ -1679,6 +1708,11 @@ var Level = function () {
         key: "addSpike",
         value: function addSpike(x, y) {
             this.collidables.push(new Spike(x, y));
+        }
+    }, {
+        key: "addFlag",
+        value: function addFlag(x, y) {
+            this.collidables.push(new Flag(x, y, 0));
         }
     }, {
         key: "create",
@@ -1714,6 +1748,9 @@ var Level = function () {
                         if (r === 255 && g === 0 && b === 0) {
                             _this.addSpike(x * 32, y * 32);
                         }
+                        if (r === 255 && g === 0 && b === 255) {
+                            _this.addFlag(x * 32, y * 32);
+                        }
                     }
                 }
             };
@@ -1740,18 +1777,32 @@ var state_1 = require("./state");
 var constants_1 = require("./constants");
 var camera_1 = require("./camera");
 
+var PlayerData = function PlayerData(x, y, id, team, nickname) {
+    _classCallCheck(this, PlayerData);
+
+    this.x = 0;
+    this.y = 0;
+    this.id = 0;
+    this.team = 0;
+    this.nickname = "";
+    this.x = x;
+    this.y = y;
+    this.id = id;
+    this.team = team;
+    this.nickname = nickname;
+};
+
+exports.PlayerData = PlayerData;
+
 var Game = function () {
     function Game() {
         _classCallCheck(this, Game);
 
-        this.deathAnimFrame = 0;
         this.user_id = Math.floor(Math.random() * 10000);
         this.canvas = document.getElementById("gameCanvas");
         this.spriteSheet = new Image();
         this.spriteSheet.src = "images/sheet.png";
         this.state = new state_1.GameState(this.user_id);
-        this.level = new entities_1.Level();
-        this.level.create(this.state);
     }
 
     _createClass(Game, [{
@@ -1762,11 +1813,17 @@ var Game = function () {
             return true;
         }
     }, {
+        key: "sudoku",
+        value: function sudoku(roomChan) {
+            roomChan.push("sudoku", new PlayerData(this.state.userState.x, this.state.userState.y, this.state.user_id, this.state.user_team, this.state.user_nickname));
+            this.killPlayer();
+        }
+    }, {
         key: "killPlayer",
         value: function killPlayer() {
-            this.deathAnimFrame = 10;
-            this.state.userState.x = this.level.spawnX;
-            this.state.userState.y = this.level.spawnY;
+            this.state.deathAnimFrame = 10;
+            this.state.userState.x = this.state.level.spawnX;
+            this.state.userState.y = this.state.level.spawnY;
             this.state.userState.dx = 0;
             this.state.userState.dy = 0;
         }
@@ -1786,7 +1843,7 @@ var Game = function () {
                 var _iteratorError = undefined;
 
                 try {
-                    for (var _iterator = _this.level.collidables[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                    for (var _iterator = _this.state.level.collidables[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
                         var obj = _step.value;
 
                         if (_this.checkCollision(user, obj)) {
@@ -1838,7 +1895,7 @@ var Game = function () {
                 var _iteratorError2 = undefined;
 
                 try {
-                    for (var _iterator2 = _this.level.collidables[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                    for (var _iterator2 = _this.state.level.collidables[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
                         var _obj = _step2.value;
 
                         if (_this.checkCollision(user, _obj) && !(_obj instanceof entities_1.PlayerBlock)) {
@@ -1867,7 +1924,7 @@ var Game = function () {
             var draw = function draw() {
                 var ctx = _this.canvas.getContext("2d");
                 var gs = _this.state;
-                ctx.fillStyle = 'rgb(255, 255, 255)';
+                ctx.fillStyle = 'rgb(139, 206, 210)';
                 ctx.fillRect(0, 0, constants_1.Constants.W, constants_1.Constants.H);
                 ctx.fillStyle = 'rgb(0, 0, 0)';
                 var user = _this.state.userState;
@@ -1876,12 +1933,13 @@ var Game = function () {
                 var _iteratorError3 = undefined;
 
                 try {
-                    for (var _iterator3 = _this.level.collidables[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+                    for (var _iterator3 = _this.state.level.collidables[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
                         var obj = _step3.value;
 
                         if (obj instanceof entities_1.PlayerBlock) ctx.fillRect(obj.x - camera_1.Camera.x, obj.y - camera_1.Camera.y, obj.w, obj.h);
                         if (obj instanceof entities_1.Block) ctx.fillRect(obj.x - camera_1.Camera.x, obj.y - camera_1.Camera.y, obj.w, obj.h);
                         if (obj instanceof entities_1.Spike) ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 4, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, obj.x - camera_1.Camera.x, obj.y - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
+                        if (obj instanceof entities_1.Flag) ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 2, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, obj.x - camera_1.Camera.x, obj.y - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                     }
                 } catch (err) {
                     _didIteratorError3 = true;
@@ -1941,18 +1999,19 @@ var Game = function () {
                     }
                 }
 
-                if (_this.deathAnimFrame >= 5) {
-                    _this.deathAnimFrame--;
+                if (_this.state.deathAnimFrame >= 5) {
+                    _this.state.deathAnimFrame--;
                     ctx.fillStyle = 'rgb(0, 0, 0)';
                     ctx.fillRect(0, 0, constants_1.Constants.W, constants_1.Constants.H);
-                } else if (_this.deathAnimFrame > 0) {
-                    _this.deathAnimFrame--;
+                } else if (_this.state.deathAnimFrame > 0) {
+                    _this.state.deathAnimFrame--;
                     ctx.fillStyle = 'rgb(255, 255, 255)';
                     ctx.fillRect(0, 0, constants_1.Constants.W, constants_1.Constants.H);
                 }
             };
             var Key = {
                 _pressed: {},
+                SPACE: 32,
                 LEFT: 37,
                 UP: 38,
                 RIGHT: 39,
@@ -1961,7 +2020,10 @@ var Game = function () {
                     return this._pressed[keyCode];
                 },
                 onKeydown: function onKeydown(event) {
-                    this._pressed[event.keyCode] = true;
+                    if (event.keyCode == Key.SPACE) {
+                        _this.sudoku(roomChan);
+                    }
+                    Key._pressed[event.keyCode] = true;
                 },
                 onKeyup: function onKeyup(event) {
                     delete this._pressed[event.keyCode];
@@ -1976,7 +2038,10 @@ var Game = function () {
             var check_bounds = function check_bounds(user) {
                 if (user.x < 0) user.x = 0;
                 if (user.x > constants_1.Constants.LEVEL_W - constants_1.Constants.PLAYER_W) user.x = constants_1.Constants.LEVEL_W - constants_1.Constants.PLAYER_W;
-                if (user.y < 0) user.y = 0;
+                if (user.y < 0) {
+                    user.dy = 0;
+                    user.y = 0;
+                }
                 if (user.y > constants_1.Constants.LEVEL_H - constants_1.Constants.PLAYER_H) {
                     user.dy = 0;
                     user.y = constants_1.Constants.LEVEL_H - constants_1.Constants.PLAYER_H;
@@ -2000,7 +2065,7 @@ var Game = function () {
                     user.dx += (v - user.dx) * 0.2;
                     user.x_dir = 1;
                 } else {
-                    user.dx *= 0.98;
+                    user.dx *= 0.9;
                     if (Math.abs(user.dx) < 1) {
                         user.dx = 0;
                     }
@@ -2011,11 +2076,7 @@ var Game = function () {
                 camera_1.Camera.update(user);
             };
             var push = function push() {
-                roomChan.push("update_pos", {
-                    x: _this.state.userState.x,
-                    y: _this.state.userState.y,
-                    user_id: _this.user_id
-                });
+                roomChan.push("update_pos", new PlayerData(_this.state.userState.x, _this.state.userState.y, _this.user_id, _this.state.user_team, _this.state.user_nickname));
             };
             setInterval(function () {
                 update();
@@ -2040,6 +2101,8 @@ var _createClass = function () { function defineProperties(target, props) { for 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 Object.defineProperty(exports, "__esModule", { value: true });
+var entities_1 = require("./entities");
+var constants_1 = require("./constants");
 
 var PlayerState = function PlayerState(x, y, id) {
     _classCallCheck(this, PlayerState);
@@ -2067,9 +2130,18 @@ var GameState = function () {
     function GameState(user_id) {
         _classCallCheck(this, GameState);
 
+        this.score = [];
+        this.flag_holders = [];
+        this.deathAnimFrame = 0;
+        this.user_team = 0;
+        this.user_nickname = "horsey";
         this.fps = 60;
         this.user_id = user_id;
         this.playerStates = new Array(new PlayerState(0, 0, user_id));
+        this.score = new Array(constants_1.Constants.TEAMS);
+        this.flag_holders = new Array(constants_1.Constants.TEAMS);
+        this.level = new entities_1.Level();
+        this.level.create(this);
     }
 
     _createClass(GameState, [{

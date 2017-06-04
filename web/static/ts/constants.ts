@@ -1,4 +1,6 @@
 export class Constants {
+  static readonly TEAMS = 2;
+
   static readonly PLAYER_W = 32;
   static readonly PLAYER_H = 32;
   static readonly W = 640;

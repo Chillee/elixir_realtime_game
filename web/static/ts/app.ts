@@ -7,11 +7,7 @@ import {Constants} from "./constants";
 import {Camera} from "./camera";
 import { GameState, PlayerState } from "./state";
 import { Level, Collidable, PlayerBlock } from "./entities";
-import { Game } from "./game";
-
-
-
-
+import { PlayerData, Game } from "./game";
 
 class App {
   static socket: Socket;
@@ -40,16 +36,16 @@ class App {
     // Start the game loop
     game.run(this.roomChan);
 
-    this.roomChan.on("update_pos", (msg: { x: number, y: number, user_id: number }) => {
-      if (msg.user_id === this.game.user_id) {
+    this.roomChan.on("update_pos", (msg: PlayerData) => {
+      if (msg.id === this.game.user_id) {
         return;
       }
-      const changedPlayer = this.game.state.playerStates.filter(x => x.id === msg.user_id);
+      const changedPlayer = this.game.state.playerStates.filter(x => x.id === msg.id);
       if (changedPlayer.length === 1) {
         changedPlayer[0].x = msg.x;
         changedPlayer[0].y = msg.y;
-      } else {
-        this.game.state.playerStates.push(new PlayerState(msg.x, msg.y, msg.user_id));
+      } else if (changedPlayer.length === 0) {
+        this.game.state.playerStates.push(new PlayerState(msg.x, msg.y, msg.id));
       }
     });
 
@@ -58,11 +54,22 @@ class App {
       this.game.state.playerStates.splice(player_idx, 1);
     });
 
-    this.roomChan.on("world_data", (data) => {
-      for (const player of data.players) {
-        this.game.level.collidables.push(new PlayerBlock(player.x, player.y));
+    this.roomChan.on("init_data", (data : { blocks: Array<PlayerData>, id: number, team: number }) => {
+      for (const block of data.blocks) {
+        this.game.state.level.collidables.push(new PlayerBlock(block.x, block.y, block.id, block.team));
       }
-    })
+      this.game.state.user_id = data.id;
+      this.game.state.user_team = data.team;
+    });
+
+    this.roomChan.on("add_block", (data: PlayerData) => {
+      this.game.state.level.collidables.push(new PlayerBlock(data.x, data.y, data.id, data.team));
+    });
+
+    this.roomChan.on("overview_data", (data : { flag_holder: Array<number | null>, score: Array<number> }) => {
+      this.game.state.flag_holders = data.flag_holder;
+      this.game.state.score = data.score;
+    });
   }
 
 }
