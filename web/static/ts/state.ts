@@ -1,3 +1,6 @@
+import { Level } from "./entities";
+import { Constants } from "./constants";
+
 export class PlayerState {
   x = 0;
   y = 0;
@@ -11,22 +14,36 @@ export class PlayerState {
   can_jump = false;
   tick = 0;
   frame = 0;
+  team = 0;
 
-  constructor(x: number, y: number, id: number) {
+  constructor(x: number, y: number, id: number, team: number) {
     this.x = x;
     this.y = y;
     this.id = id;
+    this.team = team;
   }
 }
 
 export class GameState {
+  score = [] as Array<number>;
+  flag_holders = [] as Array<number | null>;
+  deathAnimFrame = 0;
+  user_team = 0;
+  user_nickname = "horsey";
+  level: Level;
   user_id: number;
   fps = 60;
   playerStates: Array<PlayerState>
 
   constructor(user_id: number) {
     this.user_id = user_id;
-    this.playerStates = new Array(new PlayerState(0, 0, user_id));
+    this.playerStates = new Array(new PlayerState(0, 0, this.user_id, this.user_team));
+
+    this.score = new Array(Constants.TEAMS);
+    this.flag_holders = new Array(Constants.TEAMS);
+
+    this.level = new Level();
+    this.level.create(this);
   }
   get userState() {
     return this.playerStates.filter(x => x.id === this.user_id)[0]

@@ -37,10 +37,32 @@ export class PlayerBlock implements Collidable {
   right = 0;
   top = 0;
   bottom = 0;
+  id = 0;
+  team = 0;
 
-  constructor(x: number, y: number) {
+  constructor(x: number, y: number, id: number, team: number) {
     this.x = x;
     this.y = y;
+    this.id = id;
+    this.team = team;
+  }
+}
+
+export class Flag implements Collidable {
+  x = 0;
+  y = 0;
+  w = Constants.PLAYER_W;
+  h = Constants.PLAYER_H;
+  left = 6;
+  right = 6;
+  top = 13;
+  bottom = 0;
+  team = 0;
+
+  constructor(x: number, y: number, team: number) {
+    this.x = x;
+    this.y = y;
+    this.team = team;
   }
 }
 
@@ -65,16 +87,16 @@ export class Level {
   spawnY: number;
   collidables: Array<Collidable>;
 
-  addDeadPlayer(x: number, y: number) {
-    // todo
-  }
-
   addBlock(x: number, y: number) {
     this.collidables.push(new Block(x, y));
   }
 
   addSpike(x: number, y: number) {
     this.collidables.push(new Spike(x, y));
+  }
+
+  addFlag(x: number, y: number) {
+    this.collidables.push(new Flag(x, y, 0));
   }
 
   create(gs: GameState) {
@@ -110,6 +132,9 @@ export class Level {
           }
           if (r === 255 && g === 0 && b === 0) {
             this.addSpike(x * 32, y * 32);
+          }
+          if (r === 255 && g === 0 && b === 255) {
+            this.addFlag(x * 32, y * 32);
           }
         }
       }
