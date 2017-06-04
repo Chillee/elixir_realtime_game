@@ -197,7 +197,7 @@ export class Game {
 
       for (const obj of this.state.level.collidables) {
         if (obj instanceof PlayerBlock)
-          ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 5, 0, Constants.PLAYER_W, Constants.PLAYER_H,
+          ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * (5 + obj.team), 0, Constants.PLAYER_W, Constants.PLAYER_H,
             obj.x - Camera.x, obj.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
         if (obj instanceof Block)
           ctx.fillRect(obj.x - Camera.x, obj.y - Camera.y, obj.w, obj.h);
@@ -205,22 +205,12 @@ export class Game {
           ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 4, 0, Constants.PLAYER_W, Constants.PLAYER_H,
             obj.x - Camera.x, obj.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
         if (obj instanceof Flag && obj.holding_id == null) {
-          if (obj.team === 0) {
-            ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 2, 0, Constants.PLAYER_W, Constants.PLAYER_H,
-              obj.x - Camera.x, obj.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
-          } else if (obj.team === 1) {
-            ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 3, 0, Constants.PLAYER_W, Constants.PLAYER_H,
-              obj.x - Camera.x, obj.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
-          }
+          ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * (2 + obj.team), 0, Constants.PLAYER_W, Constants.PLAYER_H,
+            obj.x - Camera.x, obj.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
         }
         if (obj instanceof ScoringArea) {
-          if (obj.team === 0) {
-            ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 4, Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H,
-              obj.x - Camera.x, obj.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
-          } else if (obj.team === 1) {
-            ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 5, Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H,
-              obj.x - Camera.x, obj.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
-          }
+          ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * (5 + obj.team), Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H,
+            obj.x - Camera.x, obj.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
         }
       }
 
@@ -229,12 +219,12 @@ export class Game {
         ctx.scale(-1, 1);
         if (user.dx != 0) {
           user.frame = Math.floor(user.tick / 5) % 4;
-          ctx.drawImage(this.spriteSheet, user.frame * Constants.PLAYER_W, Constants.PLAYER_H,
+          ctx.drawImage(this.spriteSheet, user.frame * Constants.PLAYER_W, Constants.PLAYER_H * (2 + user.team),
             Constants.PLAYER_W, Constants.PLAYER_H, 0, 0,
             Constants.PLAYER_W, Constants.PLAYER_H);
         }
         else {
-          ctx.drawImage(this.spriteSheet, 0, 0, Constants.PLAYER_W, Constants.PLAYER_H,
+          ctx.drawImage(this.spriteSheet, 0, Constants.PLAYER_H * user.team, Constants.PLAYER_W, Constants.PLAYER_H,
             0, 0, Constants.PLAYER_W, Constants.PLAYER_H);
         }
         ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -242,29 +232,21 @@ export class Game {
       else {
         if (user.dx != 0) {
           user.frame = Math.floor(user.tick / 5) % 4;
-          ctx.drawImage(this.spriteSheet, user.frame * Constants.PLAYER_W, Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H, Math.floor(user.x) - Camera.x, Math.floor(user.y) - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
+          ctx.drawImage(this.spriteSheet, user.frame * Constants.PLAYER_W, Constants.PLAYER_H * (2 + user.team), Constants.PLAYER_W, Constants.PLAYER_H, Math.floor(user.x) - Camera.x, Math.floor(user.y) - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
         }
         else {
-          ctx.drawImage(this.spriteSheet, 0, 0, Constants.PLAYER_W, Constants.PLAYER_H, Math.floor(user.x) - Camera.x, Math.floor(user.y) - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
+          ctx.drawImage(this.spriteSheet, 0, Constants.PLAYER_H * user.team, Constants.PLAYER_W, Constants.PLAYER_H, Math.floor(user.x) - Camera.x, Math.floor(user.y) - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
         }
       }
       for (const flag of this.state.flags) {
         if (flag.holding_id === this.state.user_id) {
-          if (flag.team === 0) {
-            ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 2, 0, Constants.PLAYER_W, Constants.PLAYER_H, Math.floor(user.x) - Camera.x, Math.floor(user.y) - Camera.y - Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H);
-          } else if (flag.team === 1) {
-            ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 3, 0, Constants.PLAYER_W, Constants.PLAYER_H, Math.floor(user.x) - Camera.x, Math.floor(user.y) - Camera.y - Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H);
-          }
+          ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * (2 + flag.team), 0, Constants.PLAYER_W, Constants.PLAYER_H, Math.floor(user.x) - Camera.x, Math.floor(user.y) - Camera.y - Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H);
         }
       }
       for (const player of this.state.nonUserStates) {
         for (const flag of this.state.flags) {
           if (flag.holding_id === player.id) {
-            if (flag.team === 0) {
-              ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 2, 0, Constants.PLAYER_W, Constants.PLAYER_H, Math.floor(player.x) - Camera.x, Math.floor(player.y) - Camera.y - Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H);
-            } else if (flag.team === 1) {
-              ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 3, 0, Constants.PLAYER_W, Constants.PLAYER_H, Math.floor(player.x) - Camera.x, Math.floor(player.y) - Camera.y - Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H);
-            }
+            ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * (2 + flag.team), 0, Constants.PLAYER_W, Constants.PLAYER_H, Math.floor(player.x) - Camera.x, Math.floor(player.y) - Camera.y - Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H);
           }
         }
         ctx.fillRect(Math.floor(player.x) - Camera.x, Math.floor(player.y) - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);

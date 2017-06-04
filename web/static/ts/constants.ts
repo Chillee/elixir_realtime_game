@@ -1,6 +1,6 @@
 export class Constants {
   static readonly TEAMS = 2;
-  static readonly TEAM_NAMES = ["White", "Red"];
+  static readonly TEAM_NAMES = ["Blue", "Red"];
 
   static readonly DESTROY_RADIUS = 10000;
 
