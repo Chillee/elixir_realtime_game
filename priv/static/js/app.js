@@ -1652,8 +1652,7 @@ var Game = function () {
                 }
             };
             var push = function push() {
-                roomChan.push("new:msg", {
-                    user: '1',
+                roomChan.push("update_pos", {
                     x: _this3.state.userState.x,
                     y: _this3.state.userState.y,
                     user_id: _this3.user_id
@@ -1704,7 +1703,7 @@ var App = function () {
             var gs = game.state;
             // Start the game loop
             game.run(this.roomChan);
-            this.roomChan.on("new:msg", function (msg) {
+            this.roomChan.on("update_pos", function (msg) {
                 if (msg.user_id === _this4.game.user_id) {
                     return;
                 }
@@ -1718,6 +1717,12 @@ var App = function () {
                     _this4.game.state.playerStates.push(new PlayerState(msg.x, msg.y, msg.user_id));
                 }
             });
+            this.roomChan.on("remove_player", function (data) {
+                var player_idx = _this4.game.state.playerStates.findIndex(function (x) {
+                    return x.id === data.user_id;
+                });
+                _this4.game.state.playerStates.splice(player_idx, 1);
+            });
         }
     }]);
 
@@ -1725,236 +1730,6 @@ var App = function () {
 }();
 
 App.run();
-exports.default = App;
-//# sourceMappingURL=app.js.map
-});
-
-;require.register("web/static/js/app.ts", function(exports, require, module) {
-"use strict";
-var phoenix_1 = require("phoenix");
-var PlayerState = (function () {
-    function PlayerState(x, y, id) {
-        this.x = 0;
-        this.y = 0;
-        this.x_dir = 1;
-        this.id = 0;
-        this.dx = 0;
-        this.dy = 0;
-        this.can_jump = false;
-        this.tick = 0;
-        this.frame = 0;
-        this.x = x;
-        this.y = y;
-        this.id = id;
-    }
-    return PlayerState;
-}());
-var GameState = (function () {
-    function GameState(user_id) {
-        this.fps = 60;
-        this.user_id = user_id;
-        this.playerStates = new Array(new PlayerState(0, 0, user_id));
-    }
-    Object.defineProperty(GameState.prototype, "userState", {
-        get: function () {
-            var _this = this;
-            return this.playerStates.filter(function (x) { return x.id === _this.user_id; })[0];
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(GameState.prototype, "nonUserStates", {
-        get: function () {
-            var _this = this;
-            return this.playerStates.filter(function (x) { return x.id !== _this.user_id; });
-        },
-        enumerable: true,
-        configurable: true
-    });
-    return GameState;
-}());
-var Game = (function () {
-    function Game() {
-        this.user_id = Math.floor(Math.random() * 10000);
-        this.canvas = document.getElementById("gameCanvas");
-        this.spriteSheet = new Image();
-        this.spriteSheet.src = "images/sheet.png";
-        this.state = new GameState(this.user_id);
-    }
-    Game.prototype.checkPlayerCollision = function (a, b) {
-        if (a.x >= b.x + 32 || a.x + 32 <= b.x)
-            return false;
-        if (a.y >= b.y + 32 || a.y + 32 <= b.y)
-            return false;
-        return true;
-    };
-    Game.prototype.run = function (roomChan) {
-        var _this = this;
-        var collisions = function () {
-            var gs = _this.state;
-            var players = gs.playerStates;
-            var user = gs.userState;
-            user.y += user.dy;
-            for (var _i = 0, _a = gs.nonUserStates; _i < _a.length; _i++) {
-                var player = _a[_i];
-                if (_this.checkPlayerCollision(user, player)) {
-                    user.y -= user.dy;
-                    if (!_this.checkPlayerCollision(user, player)) {
-                        user.y += user.dy;
-                        if (user.dy > 0) {
-                            user.dy = 0;
-                            user.can_jump = true;
-                            user.y = player.y - 32;
-                        }
-                        else {
-                            user.y = player.y + 32;
-                        }
-                    }
-                    else {
-                        user.y += user.dy;
-                    }
-                }
-            }
-            user.x += user.dx;
-        };
-        var draw = function () {
-            var ctx = _this.canvas.getContext("2d");
-            var gs = _this.state;
-            ctx.fillStyle = 'rgb(255, 255, 255)';
-            ctx.fillRect(0, 0, 640, 480);
-            ctx.fillStyle = 'rgb(0, 0, 0)';
-            var user = _this.state.userState;
-            if (user.x_dir == -1) {
-                ctx.translate(user.x + 32, user.y);
-                ctx.scale(-1, 1);
-                if (user.dx != 0) {
-                    user.frame = Math.floor(user.tick / 5) % 4;
-                    ctx.drawImage(_this.spriteSheet, user.frame * 32, 32, 32, 32, 0, 0, 32, 32);
-                }
-                else {
-                    ctx.drawImage(_this.spriteSheet, 0, 0, 32, 32, 0, 0, 32, 32);
-                }
-                ctx.setTransform(1, 0, 0, 1, 0, 0);
-            }
-            else {
-                if (user.dx != 0) {
-                    user.frame = Math.floor(user.tick / 5) % 4;
-                    ctx.drawImage(_this.spriteSheet, user.frame * 32, 32, 32, 32, user.x, user.y, 32, 32);
-                }
-                else {
-                    ctx.drawImage(_this.spriteSheet, 0, 0, 32, 32, user.x, user.y, 32, 32);
-                }
-            }
-            for (var _i = 0, _a = _this.state.nonUserStates; _i < _a.length; _i++) {
-                var player = _a[_i];
-                ctx.fillRect(player.x, player.y, 32, 32);
-            }
-        };
-        var Key = {
-            _pressed: {},
-            LEFT: 37,
-            UP: 38,
-            RIGHT: 39,
-            DOWN: 40,
-            isDown: function (keyCode) {
-                return this._pressed[keyCode];
-            },
-            onKeydown: function (event) {
-                this._pressed[event.keyCode] = true;
-            },
-            onKeyup: function (event) {
-                delete this._pressed[event.keyCode];
-            }
-        };
-        window.addEventListener('keyup', function (event) {
-            Key.onKeyup(event);
-        }, false);
-        window.addEventListener('keydown', function (event) {
-            Key.onKeydown(event);
-        }, false);
-        var update = function () {
-            var jump_v = 12;
-            var v = 4;
-            var gs = _this.state;
-            var user = gs.userState;
-            user.tick += 1;
-            user.dx = 0;
-            if (Key.isDown(Key.UP) && user.can_jump) {
-                user.dy = -jump_v;
-                user.can_jump = false;
-            }
-            if (Key.isDown(Key.LEFT)) {
-                user.dx = -v;
-                user.x_dir = -1;
-            }
-            if (Key.isDown(Key.RIGHT)) {
-                user.dx = v;
-                user.x_dir = 1;
-            }
-            collisions();
-            user.dy += 0.7;
-            if (user.y > 480 - 32) {
-                user.dy = 0;
-                user.y = 480 - 32;
-                user.can_jump = true;
-            }
-        };
-        var push = function () {
-            roomChan.push("new:msg", {
-                user: '1',
-                x: _this.state.userState.x,
-                y: _this.state.userState.y,
-                user_id: _this.user_id
-            });
-        };
-        setInterval(function () {
-            update();
-            draw();
-            push();
-        }, 1000 / this.state.fps);
-    };
-    return Game;
-}());
-var App = (function () {
-    function App() {
-    }
-    App.init = function () {
-        this.socket = new phoenix_1.Socket("/socket", {});
-        this.socket.connect();
-        this.roomChan = this.socket.channel("rooms:lobby", {});
-        this.roomChan.join().receive("ignore", function () { return console.log("auth error"); })
-            .receive("ok", function () { console.log("join ok"); });
-        this.roomChan.onError(function (e) { return console.log("something went wrong", e); });
-    };
-    App.run = function () {
-        var _this = this;
-        this.init();
-        // chan.onClose(e => console.log("channel closed", e))
-        this.game = new Game();
-        var game = this.game;
-        var c = game.canvas;
-        var sheet = game.spriteSheet;
-        var gs = game.state;
-        // Start the game loop
-        game.run(this.roomChan);
-        this.roomChan.on("new:msg", function (msg) {
-            if (msg.user_id === _this.game.user_id) {
-                return;
-            }
-            var changedPlayer = _this.game.state.playerStates.filter(function (x) { return x.id === msg.user_id; });
-            if (changedPlayer.length === 1) {
-                changedPlayer[0].x = msg.x;
-                changedPlayer[0].y = msg.y;
-            }
-            else {
-                _this.game.state.playerStates.push(new PlayerState(msg.x, msg.y, msg.user_id));
-            }
-        });
-    };
-    return App;
-}());
-App.run();
-Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = App;
 //# sourceMappingURL=app.js.map
 });

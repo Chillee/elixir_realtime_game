@@ -154,8 +154,7 @@ class Game {
             }
         };
         const push = () => {
-            roomChan.push("new:msg", {
-                user: '1',
+            roomChan.push("update_pos", {
                 x: this.state.userState.x,
                 y: this.state.userState.y,
                 user_id: this.user_id
@@ -187,7 +186,7 @@ class App {
         const gs = game.state;
         // Start the game loop
         game.run(this.roomChan);
-        this.roomChan.on("new:msg", (msg) => {
+        this.roomChan.on("update_pos", (msg) => {
             if (msg.user_id === this.game.user_id) {
                 return;
             }
@@ -199,6 +198,10 @@ class App {
             else {
                 this.game.state.playerStates.push(new PlayerState(msg.x, msg.y, msg.user_id));
             }
+        });
+        this.roomChan.on("remove_player", (data) => {
+            const player_idx = this.game.state.playerStates.findIndex((x) => x.id === data.user_id);
+            this.game.state.playerStates.splice(player_idx, 1);
         });
     }
 }

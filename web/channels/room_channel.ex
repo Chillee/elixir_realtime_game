@@ -32,13 +32,14 @@ defmodule Chat.RoomChannel do
     {:noreply, socket}
   end
 
-  def terminate(reason, _socket) do
+  def terminate(reason, socket) do
     Logger.debug"> leave #{inspect reason}"
+    broadcast! socket, "remove_player", %{user_id: socket.assigns.user_id}
     :ok
   end
 
-  def handle_in("new:msg", msg, socket) do
-    broadcast! socket, "new:msg", %{user: msg["user"], x: msg["x"], y: msg["y"], user_id: msg["user_id"]}
-    {:reply, {:ok, %{msg: msg["body"]}}, assign(socket, :user, msg["user"])}
+  def handle_in("update_pos", msg, socket) do
+    broadcast! socket, "update_pos", %{x: msg["x"], y: msg["y"], user_id: msg["user_id"]}
+    {:reply, :ok, socket}
   end
 end
