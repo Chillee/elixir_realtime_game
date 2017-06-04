@@ -15,13 +15,13 @@ defmodule Chat.RoomChannel do
   def join("rooms:lobby", message, socket) do
     Process.flag(:trap_exit, true)
     send(self(), {:after_join, message})
-    :timer.send_interval(500, :overview_data)
+    :timer.send_interval(100, :overview_data)
     {:ok, socket}
   end
 
   def handle_info({:after_join, msg}, socket) do
     push socket, "join", %{status: "connected"}
-    push socket, "init_data", %{blocks: Chat.BlockState.val(), id: :rand.uniform(100000), team: 0}
+    push socket, "init_data", %{blocks: Chat.BlockState.val(), id: :rand.uniform(100000), team: :rand.uniform(2) - 1}
     {:noreply, socket}
   end
 

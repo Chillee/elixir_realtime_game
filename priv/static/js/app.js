@@ -1539,7 +1539,6 @@ var App = function () {
                 });
             });
             this.roomChan.on("overview_data", function (data) {
-                console.log(data);
                 for (var i = 0; i < constants_1.Constants.TEAMS; i++) {
                     _this2.game.state.flags[i].holding_id = data.flag_holder[i];
                 }
