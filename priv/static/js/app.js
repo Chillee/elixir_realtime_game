@@ -1517,6 +1517,21 @@ var Block = function Block(x, y) {
     this.y = y;
 };
 
+var PlayerBlock = function PlayerBlock(x, y) {
+    _classCallCheck(this, PlayerBlock);
+
+    this.x = 0;
+    this.y = 0;
+    this.w = Constants.PLAYER_W;
+    this.h = Constants.PLAYER_H;
+    this.left = 0;
+    this.right = 0;
+    this.top = 0;
+    this.bottom = 0;
+    this.x = x;
+    this.y = y;
+};
+
 var Spike = function Spike(x, y) {
     _classCallCheck(this, Spike);
 
@@ -1677,16 +1692,30 @@ var Game = function () {
                         var obj = _step.value;
 
                         if (_this4.checkCollision(user, obj)) {
-                            if (user.dy > 0) {
-                                user.dy = 0;
-                                user.can_jump = true;
-                                user.y = obj.y - Constants.PLAYER_H + obj.top;
+                            if (obj instanceof PlayerBlock) {
+                                user.y -= user.dy;
+                                if (!_this4.checkCollision(user, obj)) {
+                                    user.y += user.dy;
+                                    if (user.dy > 0) {
+                                        user.dy = 0;
+                                        user.can_jump = true;
+                                        user.y = obj.y - Constants.PLAYER_H + obj.top;
+                                    }
+                                } else {
+                                    user.y += user.dy;
+                                }
                             } else {
-                                user.dy = 0;
-                                user.y = obj.y + obj.h - user.top - obj.bottom;
-                            }
-                            if (obj instanceof Spike) {
-                                _this4.killPlayer();
+                                if (user.dy > 0) {
+                                    user.dy = 0;
+                                    user.can_jump = true;
+                                    user.y = obj.y - Constants.PLAYER_H + obj.top;
+                                } else {
+                                    user.dy = 0;
+                                    user.y = obj.y + obj.h - user.top - obj.bottom;
+                                }
+                                if (obj instanceof Spike) {
+                                    _this4.killPlayer();
+                                }
                             }
                         }
                     }
@@ -1714,7 +1743,7 @@ var Game = function () {
                     for (var _iterator2 = _this4.level.collidables[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
                         var _obj = _step2.value;
 
-                        if (_this4.checkCollision(user, _obj)) {
+                        if (_this4.checkCollision(user, _obj) && !(_obj instanceof PlayerBlock)) {
                             if (user.dx > 0) {
                                 user.x = _obj.x - Constants.PLAYER_W + user.right + _obj.left;
                             } else {
@@ -1752,6 +1781,7 @@ var Game = function () {
                     for (var _iterator3 = _this4.level.collidables[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
                         var obj = _step3.value;
 
+                        if (obj instanceof PlayerBlock) ctx.fillRect(obj.x - Camera.x, obj.y - Camera.y, obj.w, obj.h);
                         if (obj instanceof Block) ctx.fillRect(obj.x - Camera.x, obj.y - Camera.y, obj.w, obj.h);
                         if (obj instanceof Spike) ctx.drawImage(_this4.spriteSheet, Constants.PLAYER_W * 4, 0, Constants.PLAYER_W, Constants.PLAYER_H, obj.x - Camera.x, obj.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
                     }
@@ -1908,8 +1938,6 @@ var App = function () {
     _createClass(App, null, [{
         key: "init",
         value: function init() {
-            var _this5 = this;
-
             this.socket = new phoenix_1.Socket("/socket", {});
             this.socket.connect();
             this.roomChan = this.socket.channel("rooms:lobby", {});
@@ -1921,6 +1949,21 @@ var App = function () {
             this.roomChan.onError(function (e) {
                 return console.log("something went wrong", e);
             });
+        }
+    }, {
+        key: "run",
+        value: function run() {
+            var _this5 = this;
+
+            this.init();
+            // chan.onClose(e => console.log("channel closed", e))
+            this.game = new Game();
+            var game = this.game;
+            var c = game.canvas;
+            var sheet = game.spriteSheet;
+            var gs = game.state;
+            // Start the game loop
+            game.run(this.roomChan);
             this.roomChan.on("update_pos", function (msg) {
                 if (msg.user_id === _this5.game.user_id) {
                     return;
@@ -1950,7 +1993,7 @@ var App = function () {
                     for (var _iterator5 = data.players[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
                         var player = _step5.value;
 
-                        _this5.game.state.playerStates.push(new PlayerState(player.x, player.y, -1));
+                        _this5.game.level.collidables.push(new PlayerBlock(player.x, player.y));
                     }
                 } catch (err) {
                     _didIteratorError5 = true;
@@ -1967,19 +2010,6 @@ var App = function () {
                     }
                 }
             });
-        }
-    }, {
-        key: "run",
-        value: function run() {
-            this.init();
-            // chan.onClose(e => console.log("channel closed", e))
-            this.game = new Game();
-            var game = this.game;
-            var c = game.canvas;
-            var sheet = game.spriteSheet;
-            var gs = game.state;
-            // Start the game loop
-            game.run(this.roomChan);
         }
     }]);
 
