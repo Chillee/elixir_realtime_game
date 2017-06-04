@@ -63,14 +63,20 @@ export class Game {
     let blockX = block.x + block.w / 2;
     let blockY = block.y + block.h / 2;
     let pX = this.state.userState.x + Constants.PLAYER_W / 2;
-    let pY = this.state.userState.x + Constants.PLAYER_W / 2;
-    if (Math.hypot(blockX - pX, blockY - pY) < Constants.DESTROY_RADIUS) {
-      return true;
-    }
-    return false;
+    let pY = this.state.userState.y + Constants.PLAYER_H / 2;
+    return (Math.hypot(blockX - pX, blockY - pY) < Constants.DESTROY_RADIUS);
   }
 
   private sudoku() {
+    let ids: Array<number> = new Array();
+    for (const obj of this.state.level.collidables) {
+      if (obj instanceof PlayerBlock && obj.team !== this.state.user_team) {
+        console.log("Potential block: ", obj.team, this.blockInRange(obj));
+      }
+      if (obj instanceof PlayerBlock && obj.team !== this.state.user_team && this.blockInRange(obj)) {
+        ids.push(obj.id);
+      }
+    }
     this.state.roomChan.push("sudoku", new PlayerData(
       this.state.userState.x,
       this.state.userState.y,
@@ -78,12 +84,7 @@ export class Game {
       this.state.user_team,
       this.state.user_nickname
     ));
-    let ids: Array<number> = new Array();
-    for (const obj of this.state.level.collidables) {
-      if (obj instanceof PlayerBlock && obj.team != this.state.user_team && this.blockInRange(obj)) {
-        ids.push(obj.id);
-      }
-    }
+    console.log("destroy_block_ids/push", ids);
     this.state.roomChan.push("remove_blocks", {block_ids: ids});
     this.teleportPlayer();
   }

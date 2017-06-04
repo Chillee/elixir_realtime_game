@@ -1537,6 +1537,7 @@ var App = function () {
                 _this2.game.state.level.collidables = _this2.game.state.level.collidables.filter(function (x) {
                     return !(x instanceof entities_1.PlayerBlock && data.block_ids.indexOf(x.id) !== -1);
                 });
+                console.log(data.block_ids);
             });
             this.roomChan.on("overview_data", function (data) {
                 for (var i = 0; i < constants_1.Constants.TEAMS; i++) {
@@ -1905,16 +1906,12 @@ var Game = function () {
             var blockX = block.x + block.w / 2;
             var blockY = block.y + block.h / 2;
             var pX = this.state.userState.x + constants_1.Constants.PLAYER_W / 2;
-            var pY = this.state.userState.x + constants_1.Constants.PLAYER_W / 2;
-            if (Math.hypot(blockX - pX, blockY - pY) < constants_1.Constants.DESTROY_RADIUS) {
-                return true;
-            }
-            return false;
+            var pY = this.state.userState.y + constants_1.Constants.PLAYER_H / 2;
+            return Math.hypot(blockX - pX, blockY - pY) < constants_1.Constants.DESTROY_RADIUS;
         }
     }, {
         key: "sudoku",
         value: function sudoku() {
-            this.state.roomChan.push("sudoku", new PlayerData(this.state.userState.x, this.state.userState.y, this.state.user_id, this.state.user_team, this.state.user_nickname));
             var ids = new Array();
             var _iteratorNormalCompletion = true;
             var _didIteratorError = false;
@@ -1924,7 +1921,10 @@ var Game = function () {
                 for (var _iterator = this.state.level.collidables[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
                     var obj = _step.value;
 
-                    if (obj instanceof entities_1.PlayerBlock && obj.team != this.state.user_team && this.blockInRange(obj)) {
+                    if (obj instanceof entities_1.PlayerBlock && obj.team !== this.state.user_team) {
+                        console.log("Potential block: ", obj.team, this.blockInRange(obj));
+                    }
+                    if (obj instanceof entities_1.PlayerBlock && obj.team !== this.state.user_team && this.blockInRange(obj)) {
                         ids.push(obj.id);
                     }
                 }
@@ -1943,6 +1943,8 @@ var Game = function () {
                 }
             }
 
+            this.state.roomChan.push("sudoku", new PlayerData(this.state.userState.x, this.state.userState.y, this.state.user_id, this.state.user_team, this.state.user_nickname));
+            console.log("destroy_block_ids/push", ids);
             this.state.roomChan.push("remove_blocks", { block_ids: ids });
             this.teleportPlayer();
         }
