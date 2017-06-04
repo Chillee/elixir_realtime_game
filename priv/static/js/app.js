@@ -1533,9 +1533,9 @@ var App = function () {
             this.roomChan.on("add_block", function (data) {
                 _this2.game.state.level.collidables.push(new entities_1.PlayerBlock(data.x, data.y, data.id, data.team));
             });
-            this.roomChan.on("remove_blocks", function (ids) {
+            this.roomChan.on("remove_blocks", function (data) {
                 _this2.game.state.level.collidables = _this2.game.state.level.collidables.filter(function (x) {
-                    return !(x instanceof entities_1.PlayerBlock && ids.indexOf(x.id) !== -1);
+                    return !(x instanceof entities_1.PlayerBlock && data.ids.indexOf(x.id) !== -1);
                 });
             });
             this.roomChan.on("overview_data", function (data) {
@@ -1621,7 +1621,7 @@ var Constants = function Constants() {
 };
 
 Constants.TEAMS = 2;
-Constants.TEAM_NAMES = ["White", "Red"];
+Constants.TEAM_NAMES = ["Blue", "Red"];
 Constants.DESTROY_RADIUS = 10000;
 Constants.PLAYER_W = 32;
 Constants.PLAYER_H = 32;
@@ -1943,7 +1943,7 @@ var Game = function () {
                 }
             }
 
-            this.state.roomChan.push("remove_blocks", ids);
+            this.state.roomChan.push("remove_blocks", { block_ids: ids });
             this.teleportPlayer();
         }
     }, {
@@ -2140,22 +2140,14 @@ var Game = function () {
                     for (var _iterator6 = _this.state.level.collidables[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
                         var obj = _step6.value;
 
-                        if (obj instanceof entities_1.PlayerBlock) ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 5, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, obj.x - camera_1.Camera.x, obj.y - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
+                        if (obj instanceof entities_1.PlayerBlock) ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * (5 + obj.team), 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, obj.x - camera_1.Camera.x, obj.y - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                         if (obj instanceof entities_1.Block) ctx.fillRect(obj.x - camera_1.Camera.x, obj.y - camera_1.Camera.y, obj.w, obj.h);
                         if (obj instanceof entities_1.Spike) ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 4, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, obj.x - camera_1.Camera.x, obj.y - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                         if (obj instanceof entities_1.Flag && obj.holding_id == null) {
-                            if (obj.team === 0) {
-                                ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 2, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, obj.x - camera_1.Camera.x, obj.y - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
-                            } else if (obj.team === 1) {
-                                ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 3, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, obj.x - camera_1.Camera.x, obj.y - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
-                            }
+                            ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * (2 + obj.team), 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, obj.x - camera_1.Camera.x, obj.y - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                         }
                         if (obj instanceof entities_1.ScoringArea) {
-                            if (obj.team === 0) {
-                                ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 4, constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, obj.x - camera_1.Camera.x, obj.y - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
-                            } else if (obj.team === 1) {
-                                ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 5, constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, obj.x - camera_1.Camera.x, obj.y - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
-                            }
+                            ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * (5 + obj.team), constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, obj.x - camera_1.Camera.x, obj.y - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                         }
                     }
                 } catch (err) {
@@ -2178,17 +2170,17 @@ var Game = function () {
                     ctx.scale(-1, 1);
                     if (user.dx != 0) {
                         user.frame = Math.floor(user.tick / 5) % 4;
-                        ctx.drawImage(_this.spriteSheet, user.frame * constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, 0, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
+                        ctx.drawImage(_this.spriteSheet, user.frame * constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H * (2 + user.team), constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, 0, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                     } else {
-                        ctx.drawImage(_this.spriteSheet, 0, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, 0, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
+                        ctx.drawImage(_this.spriteSheet, 0, constants_1.Constants.PLAYER_H * user.team, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, 0, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                     }
                     ctx.setTransform(1, 0, 0, 1, 0, 0);
                 } else {
                     if (user.dx != 0) {
                         user.frame = Math.floor(user.tick / 5) % 4;
-                        ctx.drawImage(_this.spriteSheet, user.frame * constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, Math.floor(user.x) - camera_1.Camera.x, Math.floor(user.y) - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
+                        ctx.drawImage(_this.spriteSheet, user.frame * constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H * (2 + user.team), constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, Math.floor(user.x) - camera_1.Camera.x, Math.floor(user.y) - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                     } else {
-                        ctx.drawImage(_this.spriteSheet, 0, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, Math.floor(user.x) - camera_1.Camera.x, Math.floor(user.y) - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
+                        ctx.drawImage(_this.spriteSheet, 0, constants_1.Constants.PLAYER_H * user.team, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, Math.floor(user.x) - camera_1.Camera.x, Math.floor(user.y) - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                     }
                 }
                 var _iteratorNormalCompletion7 = true;
@@ -2200,11 +2192,7 @@ var Game = function () {
                         var flag = _step7.value;
 
                         if (flag.holding_id === _this.state.user_id) {
-                            if (flag.team === 0) {
-                                ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 2, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, Math.floor(user.x) - camera_1.Camera.x, Math.floor(user.y) - camera_1.Camera.y - constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
-                            } else if (flag.team === 1) {
-                                ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 3, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, Math.floor(user.x) - camera_1.Camera.x, Math.floor(user.y) - camera_1.Camera.y - constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
-                            }
+                            ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * (2 + flag.team), 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, Math.floor(user.x) - camera_1.Camera.x, Math.floor(user.y) - camera_1.Camera.y - constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                         }
                     }
                 } catch (err) {
@@ -2238,11 +2226,7 @@ var Game = function () {
                                 var _flag2 = _step9.value;
 
                                 if (_flag2.holding_id === player.id) {
-                                    if (_flag2.team === 0) {
-                                        ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 2, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, Math.floor(player.x) - camera_1.Camera.x, Math.floor(player.y) - camera_1.Camera.y - constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
-                                    } else if (_flag2.team === 1) {
-                                        ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 3, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, Math.floor(player.x) - camera_1.Camera.x, Math.floor(player.y) - camera_1.Camera.y - constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
-                                    }
+                                    ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * (2 + _flag2.team), 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, Math.floor(player.x) - camera_1.Camera.x, Math.floor(player.y) - camera_1.Camera.y - constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                                 }
                             }
                         } catch (err) {
