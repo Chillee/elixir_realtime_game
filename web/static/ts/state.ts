@@ -1,5 +1,6 @@
-import { Level } from "./entities";
+import { Flag, Level } from "./entities";
 import { Constants } from "./constants";
+import { Channel } from "phoenix";
 
 export class PlayerState {
   x = 0;
@@ -8,12 +9,12 @@ export class PlayerState {
   right = 3;
   top = 6;
   x_dir = 1;
-  id = 0;
   dx = 0;
   dy = 0;
   can_jump = false;
   tick = 0;
   frame = 0;
+  id = 0;
   team = 0;
 
   constructor(x: number, y: number, id: number, team: number) {
@@ -25,9 +26,10 @@ export class PlayerState {
 }
 
 export class GameState {
+  roomChan: Channel;
   user_id = Math.floor(Math.random() * 10000);
   score = [] as Array<number>;
-  flag_holders = [] as Array<number | null>;
+  flags = [] as Array<Flag>;
   deathAnimFrame = 0;
   user_team = 0;
   user_nickname = "horsey";
@@ -39,7 +41,7 @@ export class GameState {
     this.playerStates = new Array(new PlayerState(0, 0, this.user_id, this.user_team));
 
     this.score = new Array(Constants.TEAMS);
-    this.flag_holders = new Array(Constants.TEAMS);
+    this.flags = new Array(Constants.TEAMS);
 
     this.level = new Level();
     this.level.create(this);

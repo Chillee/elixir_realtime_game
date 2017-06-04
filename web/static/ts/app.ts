@@ -28,6 +28,7 @@ class App {
     // chan.onClose(e => console.log("channel closed", e))
 
     this.game = new Game();
+    this.game.state.roomChan = this.roomChan;
     const game = this.game;
     const c = game.canvas;
     const sheet = game.spriteSheet;

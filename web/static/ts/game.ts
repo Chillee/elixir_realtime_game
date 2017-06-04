@@ -38,18 +38,40 @@ export class Game {
     return true;
   }
 
-  private sudoku(roomChan: Channel) {
-    roomChan.push("sudoku", new PlayerData(
+  private takeFlag(flag: Flag) {
+    this.state.roomChan.push("take_flag", {
+      id: this.state.user_id,
+      team: this.state.user_team
+    }).receive("fail", () => {
+      flag.holding_id = null;
+    });
+
+    flag.holding_id = this.state.user_id;
+  }
+
+  private sudoku() {
+    this.state.roomChan.push("sudoku", new PlayerData(
       this.state.userState.x,
       this.state.userState.y,
       this.state.user_id,
       this.state.user_team,
       this.state.user_nickname
-    ))
+    ));
     this.killPlayer();
   }
 
   private killPlayer() {
+    this.state.roomChan.push("death", new PlayerData(
+      this.state.userState.x,
+      this.state.userState.y,
+      this.state.user_id,
+      this.state.user_team,
+      this.state.user_nickname
+    ));
+    this.teleportPlayer();
+  }
+
+  private teleportPlayer() {
     this.state.deathAnimFrame = 10;
     this.state.userState.x = this.state.level.spawnX;
     this.state.userState.y = this.state.level.spawnY;
@@ -57,7 +79,7 @@ export class Game {
     this.state.userState.dy = 0;
   }
 
-  run(roomChan: Channel) {
+  run() {
     const collisions = () => {
       const gs = this.state;
       let players = gs.playerStates;
@@ -81,8 +103,12 @@ export class Game {
             else {
               user.y += user.dy;
             }
-          }
-          else {
+          } else if (obj instanceof Flag) {
+            if (obj.holding_id === null && obj.team !== this.state.user_team) {
+              obj.holding_id = this.state.user_id;
+              this.takeFlag(obj);
+            }
+          } else {
             if (user.dy > 0) {
               user.dy = 0;
               user.can_jump = true;
@@ -100,11 +126,18 @@ export class Game {
       user.x += user.dx;
       for (const obj of this.state.level.collidables) {
         if (this.checkCollision(user, obj) && !(obj instanceof PlayerBlock)) {
-          if (user.dx > 0) {
-            user.x = obj.x - Constants.PLAYER_W + user.right + obj.left;
-          }
-          else {
-            user.x = obj.x + obj.w - user.left - obj.right;
+          if (obj instanceof Flag) {
+            if (obj.holding_id === null && obj.team !== this.state.user_team) {
+              obj.holding_id = this.state.user_id;
+              this.takeFlag(obj);
+            }
+          } else {
+            if (user.dx > 0) {
+              user.x = obj.x - Constants.PLAYER_W + user.right + obj.left;
+            }
+            else {
+              user.x = obj.x + obj.w - user.left - obj.right;
+            }
           }
         }
       }
@@ -126,9 +159,15 @@ export class Game {
         if (obj instanceof Spike)
           ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 4, 0, Constants.PLAYER_W, Constants.PLAYER_H,
             obj.x - Camera.x, obj.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
-        if (obj instanceof Flag)
-          ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 2, 0, Constants.PLAYER_W, Constants.PLAYER_H,
-            obj.x - Camera.x, obj.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
+        if (obj instanceof Flag && obj.holding_id == null) {
+          if (obj.team === 0) {
+            ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 2, 0, Constants.PLAYER_W, Constants.PLAYER_H,
+              obj.x - Camera.x, obj.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
+          } else if (obj.team === 1) {
+            ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 3, 0, Constants.PLAYER_W, Constants.PLAYER_H,
+              obj.x - Camera.x, obj.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
+          }
+        }
       }
 
       if (user.x_dir === -1) {
@@ -155,7 +194,25 @@ export class Game {
           ctx.drawImage(this.spriteSheet, 0, 0, Constants.PLAYER_W, Constants.PLAYER_H, user.x - Camera.x, user.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
         }
       }
+      for (const flag of this.state.flags) {
+        if (flag.holding_id === this.state.user_id) {
+          if (flag.team === 0) {
+            ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 2, 0, Constants.PLAYER_W, Constants.PLAYER_H, user.x - Camera.x, user.y - Camera.y - Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H);
+          } else if (flag.team === 1) {
+            ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 3, 0, Constants.PLAYER_W, Constants.PLAYER_H, user.x - Camera.x, user.y - Camera.y - Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H);
+          }
+        }
+      }
       for (const player of this.state.nonUserStates) {
+        for (const flag of this.state.flags) {
+          if (flag.holding_id === player.id) {
+            if (flag.team === 0) {
+              ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 2, 0, Constants.PLAYER_W, Constants.PLAYER_H, player.x - Camera.x, player.y - Camera.y - Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H);
+            } else if (flag.team === 1) {
+              ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 3, 0, Constants.PLAYER_W, Constants.PLAYER_H, user.x - Camera.x, user.y - Camera.y - Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H);
+            }
+          }
+        }
         ctx.fillRect(player.x - Camera.x, player.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
       }
 
@@ -186,7 +243,7 @@ export class Game {
 
       onKeydown: (event: KeyboardEvent) => {
         if (event.keyCode == Key.SPACE) {
-          this.sudoku(roomChan);
+          this.sudoku();
         }
         Key._pressed[event.keyCode] = true;
       },
@@ -250,7 +307,7 @@ export class Game {
       Camera.update(user);
     }
     const push = () => {
-      roomChan.push("update_player", new PlayerData(
+      this.state.roomChan.push("update_player", new PlayerData(
         this.state.userState.x,
         this.state.userState.y,
         this.state.user_id,

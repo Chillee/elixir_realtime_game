@@ -58,6 +58,7 @@ export class Flag implements Collidable {
   top = 13;
   bottom = 0;
   team = 0;
+  holding_id: number | null = null; // if it's null, nobody has it
 
   constructor(x: number, y: number, team: number) {
     this.x = x;
@@ -95,8 +96,10 @@ export class Level {
     this.collidables.push(new Spike(x, y));
   }
 
-  addFlag(x: number, y: number) {
-    this.collidables.push(new Flag(x, y, 0));
+  addFlag(x: number, y: number, team: number) : Flag {
+    let flag = new Flag(x, y, team);
+    this.collidables.push(flag);
+    return flag;
   }
 
   create(gs: GameState) {
@@ -134,7 +137,10 @@ export class Level {
             this.addSpike(x * 32, y * 32);
           }
           if (r === 255 && g === 0 && b === 255) {
-            this.addFlag(x * 32, y * 32);
+            gs.flags[0] = this.addFlag(x * 32, y * 32, 0);
+          }
+          if (r === 0 && g === 0 && b === 255) {
+            gs.flags[1] = this.addFlag(x * 32, y * 32, 1);
           }
         }
       }
