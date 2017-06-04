@@ -28,7 +28,7 @@ export class PlayerState {
 export class GameState {
   roomChan: Channel;
   user_id = 0;
-  score = [] as Array<number>;
+  scores = [] as Array<number>;
   flags = [] as Array<Flag>;
   deathAnimFrame = 0;
   user_team = 0;
@@ -42,7 +42,8 @@ export class GameState {
     this.user_id = id;
     this.user_team = team;
 
-    this.score = new Array(Constants.TEAMS);
+    this.scores = new Array(Constants.TEAMS);
+    this.scores.fill(0);
     this.flags = new Array(Constants.TEAMS);
 
     this.level = new Level();

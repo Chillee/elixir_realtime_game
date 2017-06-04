@@ -1537,8 +1537,7 @@ var App = function () {
                 for (var i = 0; i < constants_1.Constants.TEAMS; i++) {
                     _this2.game.state.flags[i].holding_id = data.flag_holder[i];
                 }
-                _this2.game.state.score = data.score;
-                console.log(_this2.game.state.score);
+                _this2.game.state.scores = data.score;
             });
         }
     }]);
@@ -1613,6 +1612,7 @@ var Constants = function Constants() {
 };
 
 Constants.TEAMS = 2;
+Constants.TEAM_NAMES = ["White", "Red"];
 Constants.PLAYER_W = 32;
 Constants.PLAYER_H = 32;
 Constants.W = 640;
@@ -1779,7 +1779,13 @@ var Level = function () {
                         if (r === 0 && g === 0 && b === 0) {
                             _this.addBlock(x * 32, y * 32);
                         }
-                        if (r === 0 && g === 255 && b === 0) {
+                        if (r === 0 && g === 255 && b === 0 && gs.user_team === 0) {
+                            _this.spawnX = x * 32;
+                            _this.spawnY = y * 32;
+                            gs.userState.x = x * 32;
+                            gs.userState.y = y * 32;
+                        }
+                        if (r === 0 && g === 128 && b === 128 && gs.user_team === 1) {
                             _this.spawnX = x * 32;
                             _this.spawnY = y * 32;
                             gs.userState.x = x * 32;
@@ -2220,6 +2226,22 @@ var Game = function () {
                     }
                 }
 
+                var scoreText = "";
+                for (var i = 0; i < constants_1.Constants.TEAMS; i++) {
+                    scoreText += "Team " + constants_1.Constants.TEAM_NAMES[i] + " score: " + _this.state.scores[i] + "\n";
+                }
+                ctx.font = '64px PixelFont';
+                ctx.textBaseline = 'top';
+                var textPadding = {
+                    x: 10,
+                    y: 0
+                };
+                var team0Score = "" + _this.state.scores[0];
+                ctx.fillStyle = 'rgb(255, 255, 255)';
+                ctx.fillText(team0Score, textPadding.x, textPadding.y);
+                var team1Score = "" + _this.state.scores[1];
+                ctx.fillStyle = 'rgb(172, 35, 48)';
+                ctx.fillText(team1Score, constants_1.Constants.W - ctx.measureText(team1Score).width - textPadding.x, textPadding.y);
                 if (_this.state.deathAnimFrame >= 5) {
                     _this.state.deathAnimFrame--;
                     ctx.fillStyle = 'rgb(0, 0, 0)';
@@ -2354,7 +2376,7 @@ var GameState = function () {
         _classCallCheck(this, GameState);
 
         this.user_id = 0;
-        this.score = [];
+        this.scores = [];
         this.flags = [];
         this.deathAnimFrame = 0;
         this.user_team = 0;
@@ -2363,7 +2385,8 @@ var GameState = function () {
         this.playerStates = new Array(new PlayerState(0, 0, id, team));
         this.user_id = id;
         this.user_team = team;
-        this.score = new Array(constants_1.Constants.TEAMS);
+        this.scores = new Array(constants_1.Constants.TEAMS);
+        this.scores.fill(0);
         this.flags = new Array(constants_1.Constants.TEAMS);
         this.level = new entities_1.Level();
         this.level.create(this);

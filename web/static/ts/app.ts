@@ -79,8 +79,7 @@ class App {
       for (let i = 0; i < Constants.TEAMS; i++) {
         this.game.state.flags[i].holding_id = data.flag_holder[i];
       }
-      this.game.state.score = data.score;
-      console.log(this.game.state.score);
+      this.game.state.scores = data.score;
     });
   }
 

@@ -149,7 +149,13 @@ export class Level {
           if (r === 0 && g === 0 && b === 0) {
             this.addBlock(x * 32, y * 32);
           }
-          if (r === 0 && g === 255 && b === 0) {
+          if (r === 0 && g === 255 && b === 0 && gs.user_team === 0) {
+            this.spawnX = x * 32;
+            this.spawnY = y * 32;
+            gs.userState.x = x * 32;
+            gs.userState.y = y * 32;
+          }
+          if (r === 0 && g === 128 && b === 128 && gs.user_team === 1) {
             this.spawnX = x * 32;
             this.spawnY = y * 32;
             gs.userState.x = x * 32;
