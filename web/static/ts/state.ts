@@ -25,7 +25,7 @@ export class PlayerState {
 }
 
 export class GameState {
-  user_id = Math.floor(Math.random() * 10000);
+  user_id = 0;
   score = [] as Array<number>;
   flag_holders = [] as Array<number | null>;
   deathAnimFrame = 0;

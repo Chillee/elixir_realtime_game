@@ -1489,8 +1489,6 @@ var App = function () {
                 var player_idx = _this.game.state.playerStates.findIndex(function (x) {
                     return x.id === data.id;
                 });
-                console.log(data.id, _this.game.state.user_id);
-                console.log(_this.game.state.playerStates);
                 if (data.id !== _this.game.state.user_id) {
                     _this.game.state.playerStates.splice(player_idx, 1);
                 } else {
@@ -1502,7 +1500,6 @@ var App = function () {
                 }
             });
             this.roomChan.on("init_data", function (data) {
-                console.log(data);
                 var _iteratorNormalCompletion = true;
                 var _didIteratorError = false;
                 var _iteratorError = undefined;
@@ -1513,8 +1510,6 @@ var App = function () {
 
                         _this.game.state.level.collidables.push(new entities_1.PlayerBlock(block.x, block.y, block.id, block.team));
                     }
-                    // this.game.state.user_id = data.id;
-                    // this.game.state.user_team = data.team;
                 } catch (err) {
                     _didIteratorError = true;
                     _iteratorError = err;
@@ -1529,6 +1524,10 @@ var App = function () {
                         }
                     }
                 }
+
+                console.log(data.id);
+                // this.game.state.user_id = data.id;
+                // this.game.state.user_team = data.team;
             });
             this.roomChan.on("add_block", function (data) {
                 _this.game.state.level.collidables.push(new entities_1.PlayerBlock(data.x, data.y, data.id, data.team));
@@ -2141,7 +2140,7 @@ var GameState = function () {
     function GameState() {
         _classCallCheck(this, GameState);
 
-        this.user_id = Math.floor(Math.random() * 10000);
+        this.user_id = 0;
         this.score = [];
         this.flag_holders = [];
         this.deathAnimFrame = 0;
