@@ -49,9 +49,14 @@ export class Game {
     flag.holding_id = this.state.user_id;
   }
 
-  private scoreFlag() {
-    console.log("scored flag");
-    //todo 
+  private scoreFlag(flag: Flag) {
+    this.state.roomChan.push("score_flag", {
+      id: this.state.user_id,
+      user_team: this.state.user_team,
+      flag_team: flag.team
+    });
+
+    flag.holding_id = null;
   }
 
   private sudoku() {

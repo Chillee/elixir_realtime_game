@@ -1543,11 +1543,6 @@ var App = function () {
                 for (var i = 0; i < constants_1.Constants.TEAMS; i++) {
                     _this.game.state.flags[i].holding_id = data.flag_holder[i];
                 }
-<<<<<<< HEAD
-                console.log(_this.game.state.flags);
-                console.log(_this.game.state.playerStates);
-=======
->>>>>>> 9a5a62a497c4109c37a3a0d0680df437bba58daf
                 _this.game.state.score = data.score;
             });
         }
@@ -1885,9 +1880,13 @@ var Game = function () {
         }
     }, {
         key: "scoreFlag",
-        value: function scoreFlag() {
-            Console.log("scored flag");
-            //todo 
+        value: function scoreFlag(flag) {
+            this.state.roomChan.push("score_flag", {
+                id: this.state.user_id,
+                user_team: this.state.user_team,
+                flag_team: flag.team
+            });
+            flag.holding_id = null;
         }
     }, {
         key: "sudoku",
@@ -2183,16 +2182,6 @@ var Game = function () {
                         var _iteratorError8 = undefined;
 
                         try {
-<<<<<<< HEAD
-                            for (var _iterator6 = _this.state.flags[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-                                var _flag = _step6.value;
-
-                                if (_flag.holding_id === player.id) {
-                                    if (_flag.team === 0) {
-                                        ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 2, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, player.x - camera_1.Camera.x, player.y - camera_1.Camera.y - constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
-                                    } else if (_flag.team === 1) {
-                                        ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 3, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, player.x - camera_1.Camera.x, player.y - camera_1.Camera.y - constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
-=======
                             for (var _iterator8 = _this.state.flags[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
                                 var _flag2 = _step8.value;
 
@@ -2200,8 +2189,7 @@ var Game = function () {
                                     if (_flag2.team === 0) {
                                         ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 2, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, Math.floor(player.x) - camera_1.Camera.x, Math.floor(player.y) - camera_1.Camera.y - constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                                     } else if (_flag2.team === 1) {
-                                        ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 3, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, Math.floor(user.x) - camera_1.Camera.x, Math.floor(user.y) - camera_1.Camera.y - constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
->>>>>>> 9a5a62a497c4109c37a3a0d0680df437bba58daf
+                                        ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 3, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, Math.floor(player.x) - camera_1.Camera.x, Math.floor(player.y) - camera_1.Camera.y - constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                                     }
                                 }
                             }
