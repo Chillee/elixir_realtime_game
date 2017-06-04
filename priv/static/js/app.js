@@ -1463,7 +1463,6 @@ var App = function () {
             var _this = this;
 
             this.init();
-            console.log("YOOO");
             // chan.onClose(e => console.log("channel closed", e))
             this.game = new game_1.Game();
             var game = this.game;
@@ -1472,7 +1471,7 @@ var App = function () {
             var gs = game.state;
             // Start the game loop
             game.run(this.roomChan);
-            this.roomChan.on("update_pos", function (msg) {
+            this.roomChan.on("update_player", function (msg) {
                 if (msg.user_id === _this.game.user_id) {
                     return;
                 }
@@ -2012,7 +2011,7 @@ var Game = function () {
                 camera_1.Camera.update(user);
             };
             var push = function push() {
-                roomChan.push("update_pos", {
+                roomChan.push("update_player", {
                     x: _this.state.userState.x,
                     y: _this.state.userState.y,
                     user_id: _this.user_id

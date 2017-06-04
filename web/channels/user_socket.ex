@@ -7,7 +7,9 @@ defmodule Chat.UserSocket do
   transport :longpoll, Phoenix.Transports.LongPoll
 
   def connect(params, socket) do
-    {:ok, assign(socket, :user_id, params["id"])}
+    socket = assign(socket, :user_id, params["id"])
+    socket = assign(socket, :player_data, %{})
+    {:ok, socket}
   end
 
   def id(socket) do

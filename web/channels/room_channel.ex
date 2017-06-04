@@ -20,19 +20,32 @@ defmodule Chat.RoomChannel do
 
   def handle_info({:after_join, msg}, socket) do
     push socket, "join", %{status: "connected"}
-    push socket, "world_data", %{players: Chat.WorldState.val()}
+    push socket, "initial_data", %{players: Chat.BlockState.val()}
     {:noreply, socket}
   end
 
   def terminate(reason, socket) do
     Logger.debug"> leave #{inspect reason}"
-    broadcast! socket, "remove_player", %{user_id: socket.assigns.user_id}
-    Chat.WorldState.insert(socket.assigns.player_state);
+    send(self(), {"sudoku", socket.assigns.player_data, socket})
     :ok 
   end
 
-  def handle_in("update_pos", msg, socket) do
-    broadcast! socket, "update_pos", %{x: msg["x"], y: msg["y"], user_id: msg["user_id"]}
-    {:reply, :ok, assign(socket, :player_state, %{x: msg["x"], y: msg["y"]})}
+  def handle_in("sudoku", msg, socket) do
+    broadcast! socket, "remove_player", msg
+    broadcast! socket, "add_block", msg
+    Chat.BlockState.insert(msg);
+    {:reply, :ok, socket}
+  end
+
+  def handle_in("take_flag", msg, socket) do
+    case Chat.OverViewState.take_flag(msg) do
+      {:reply, {:fail}, _} -> {:reply, :fail, socket}
+      {:reply, {:ok}, _} -> {:reply, :ok, socket}
+    end
+  end
+
+  def handle_in("update_player", msg, socket) do
+    broadcast! socket, "update_player", msg
+    {:reply, :ok, assign(socket, :player_data, msg)}
   end
 end

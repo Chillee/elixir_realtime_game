@@ -36,7 +36,7 @@ class App {
     // Start the game loop
     game.run(this.roomChan);
 
-    this.roomChan.on("update_pos", (msg: { x: number, y: number, user_id: number }) => {
+    this.roomChan.on("update_player", (msg: { x: number, y: number, user_id: number }) => {
       if (msg.user_id === this.game.user_id) {
         return;
       }
@@ -58,7 +58,7 @@ class App {
       for (const player of data.players) {
         this.game.level.collidables.push(new PlayerBlock(player.x, player.y));
       }
-    })
+    });
   }
 
 }

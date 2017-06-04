@@ -1,4 +1,4 @@
-defmodule Chat.WorldState do
+defmodule Chat.BlockState do
     use GenServer
     def insert(player), do: GenServer.cast(:world_state, {:insert, player})
 
