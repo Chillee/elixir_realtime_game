@@ -15,7 +15,7 @@ export class PlayerData {
     this.x = x;
     this.y = y;
     this.id = id;
-    this.team = team
+    this.team = team;
     this.nickname = nickname;
   }
 }
@@ -59,6 +59,17 @@ export class Game {
     flag.holding_id = null;
   }
 
+  private blockInRange(block: PlayerBlock): boolean {
+    let blockX = block.x + block.w / 2;
+    let blockY = block.y + block.h / 2;
+    let pX = this.state.userState.x + Constants.PLAYER_W / 2;
+    let pY = this.state.userState.x + Constants.PLAYER_W / 2;
+    if (Math.hypot(blockX - pX, blockY - pY) < Constants.DESTROY_RADIUS) {
+      return true;
+    }
+    return false;
+  }
+
   private sudoku() {
     this.state.roomChan.push("sudoku", new PlayerData(
       this.state.userState.x,
@@ -67,6 +78,13 @@ export class Game {
       this.state.user_team,
       this.state.user_nickname
     ));
+    let ids: Array<number> = new Array();
+    for (const obj of this.state.level.collidables) {
+      if (obj instanceof PlayerBlock && obj.team != this.state.user_team && this.blockInRange(obj)) {
+        ids.push(obj.id);
+      }
+    }
+    this.state.roomChan.push("remove_blocks", ids);
     this.teleportPlayer();
   }
 
@@ -82,7 +100,7 @@ export class Game {
   }
 
   private teleportPlayer() {
-    this.state.deathAnimFrame = 10;
+    this.state.deathAnimFrame = 30;
     this.state.userState.x = this.state.level.spawnX;
     this.state.userState.y = this.state.level.spawnY;
     this.state.userState.dx = 0;
@@ -271,17 +289,6 @@ export class Game {
       let team1Score = `${this.state.scores[1]}`;
       ctx.fillStyle = 'rgb(172, 35, 48)';
       ctx.fillText(team1Score, Constants.W - ctx.measureText(team1Score).width - textPadding.x, textPadding.y);
-
-      if (this.state.deathAnimFrame >= 5) {
-        this.state.deathAnimFrame--;
-        ctx.fillStyle = 'rgb(0, 0, 0)';
-        ctx.fillRect(0, 0, Constants.W, Constants.H);
-      }
-      else if (this.state.deathAnimFrame > 0) {
-        this.state.deathAnimFrame--;
-        ctx.fillStyle = 'rgb(255, 255, 255)';
-        ctx.fillRect(0, 0, Constants.W, Constants.H);
-      }
     }
 
     const Key = {
@@ -359,7 +366,12 @@ export class Game {
       check_bounds(user);
       user.dy += 0.7;
 
-      Camera.update(user);
+      if (this.state.deathAnimFrame === 0) {
+        Camera.updateTarget(user);
+      } else {
+        this.state.deathAnimFrame--;
+      }
+      Camera.update();
     }
     const push = () => {
       this.state.roomChan.push("update_player", new PlayerData(

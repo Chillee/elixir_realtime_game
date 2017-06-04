@@ -7,10 +7,12 @@ export class Camera {
   static targetX = 0;
   static targetY = 0;
 
-  static update(user: PlayerState) {
+  static updateTarget(user: PlayerState) {
     this.targetX = user.x + Constants.PLAYER_W / 2 - Constants.W / 2;
     this.targetY = user.y + Constants.PLAYER_H / 2 - Constants.H / 2;
+  }
 
+  static update() {
     this.cx += (this.targetX - this.cx) * 0.1;
     this.cy += (this.targetY - this.cy) * 0.1;
 

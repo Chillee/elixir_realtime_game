@@ -75,6 +75,11 @@ class App {
       this.game.state.level.collidables.push(new PlayerBlock(data.x, data.y, data.id, data.team));
     });
 
+    this.roomChan.on("remove_blocks", (ids: Array<number>) => {
+      this.game.state.level.collidables = this.game.state.level.collidables.filter(x => 
+          !(x instanceof PlayerBlock && ids.indexOf(x.id) !== -1));
+    });
+
     this.roomChan.on("overview_data", (data : { flag_holder: Array<number | null>, score: Array<number> }) => {
       console.log(data);
       for (let i = 0; i < Constants.TEAMS; i++) {
