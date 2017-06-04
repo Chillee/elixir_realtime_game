@@ -1434,11 +1434,62 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 Object.defineProperty(exports, "__esModule", { value: true });
 var phoenix_1 = require("phoenix");
 
+var Constants = function Constants() {
+    _classCallCheck(this, Constants);
+};
+
+Constants.PLAYER_W = 32;
+Constants.PLAYER_H = 32;
+Constants.W = 640;
+Constants.H = 640;
+Constants.LEVEL_W = 1024;
+Constants.LEVEL_H = 1024;
+
+var Camera = function () {
+    function Camera() {
+        _classCallCheck(this, Camera);
+    }
+
+    _createClass(Camera, null, [{
+        key: "update",
+        value: function update(user) {
+            this.targetX = user.x + Constants.PLAYER_W / 2 - Constants.W / 2;
+            this.targetY = user.y + Constants.PLAYER_H / 2 - Constants.H / 2;
+            this.cx += (this.targetX - this.cx) * 0.1;
+            this.cy += (this.targetY - this.cy) * 0.1;
+            if (this.cx > Constants.LEVEL_W - Constants.W) this.cx = Constants.LEVEL_W - Constants.W;
+            if (this.cx < 0) this.cx = 0;
+            if (this.cy > Constants.LEVEL_H - Constants.H) this.cy = Constants.LEVEL_H - Constants.H;
+            if (this.cy < 0) this.cy = 0;
+        }
+    }, {
+        key: "x",
+        get: function get() {
+            return Math.floor(this.cx);
+        }
+    }, {
+        key: "y",
+        get: function get() {
+            return Math.floor(this.cy);
+        }
+    }]);
+
+    return Camera;
+}();
+
+Camera.cx = 0;
+Camera.cy = 0;
+Camera.targetX = 0;
+Camera.targetY = 0;
+
 var PlayerState = function PlayerState(x, y, id) {
     _classCallCheck(this, PlayerState);
 
     this.x = 0;
     this.y = 0;
+    this.left = 3;
+    this.right = 3;
+    this.top = 6;
     this.x_dir = 1;
     this.id = 0;
     this.dx = 0;
@@ -1450,6 +1501,64 @@ var PlayerState = function PlayerState(x, y, id) {
     this.y = y;
     this.id = id;
 };
+
+var Block = function Block(x, y) {
+    _classCallCheck(this, Block);
+
+    this.x = 0;
+    this.y = 0;
+    this.w = Constants.PLAYER_W;
+    this.h = Constants.PLAYER_H;
+    this.x = x;
+    this.y = y;
+};
+
+var Level = function () {
+    function Level() {
+        _classCallCheck(this, Level);
+    }
+
+    _createClass(Level, [{
+        key: "addDeadPlayer",
+        value: function addDeadPlayer(x, y) {
+            // todo
+        }
+    }, {
+        key: "addBlock",
+        value: function addBlock(x, y) {
+            this.collidables.push(new Block(x, y));
+        }
+    }, {
+        key: "create",
+        value: function create() {
+            var _this = this;
+
+            this.collidables = new Array();
+            var levelImage = new Image();
+            levelImage.src = "images/level.png";
+            levelImage.onload = function () {
+                var canvas = document.createElement("canvas");
+                canvas.width = levelImage.width;
+                canvas.height = levelImage.height;
+                var ctx = canvas.getContext("2d");
+                ctx.drawImage(levelImage, 0, 0, levelImage.width, levelImage.height);
+                var data = ctx.getImageData(0, 0, levelImage.width, levelImage.height).data;
+                for (var y = 0; y < levelImage.width; y++) {
+                    for (var x = 0; x < levelImage.height; x++) {
+                        var r = data[(x + y * levelImage.width) * 4];
+                        var g = data[(x + y * levelImage.width) * 4 + 1];
+                        var b = data[(x + y * levelImage.width) * 4 + 2];
+                        if (r === 0 && g === 0 && b === 0) {
+                            _this.addBlock(x * 32, y * 32);
+                        } else if (r == 0 && g == 255 && b == 0) {}
+                    }
+                }
+            };
+        }
+    }]);
+
+    return Level;
+}();
 
 var GameState = function () {
     function GameState(user_id) {
@@ -1463,19 +1572,19 @@ var GameState = function () {
     _createClass(GameState, [{
         key: "userState",
         get: function get() {
-            var _this = this;
+            var _this2 = this;
 
             return this.playerStates.filter(function (x) {
-                return x.id === _this.user_id;
+                return x.id === _this2.user_id;
             })[0];
         }
     }, {
         key: "nonUserStates",
         get: function get() {
-            var _this2 = this;
+            var _this3 = this;
 
             return this.playerStates.filter(function (x) {
-                return x.id !== _this2.user_id;
+                return x.id !== _this3.user_id;
             });
         }
     }]);
@@ -1492,22 +1601,24 @@ var Game = function () {
         this.spriteSheet = new Image();
         this.spriteSheet.src = "images/sheet.png";
         this.state = new GameState(this.user_id);
+        this.level = new Level();
+        this.level.create();
     }
 
     _createClass(Game, [{
-        key: "checkPlayerCollision",
-        value: function checkPlayerCollision(a, b) {
-            if (a.x >= b.x + 32 || a.x + 32 <= b.x) return false;
-            if (a.y >= b.y + 32 || a.y + 32 <= b.y) return false;
+        key: "checkCollision",
+        value: function checkCollision(a, b) {
+            if (a.x >= b.x + b.w - a.left || a.x + Constants.PLAYER_W - a.right <= b.x) return false;
+            if (a.y >= b.y + b.h - a.top || a.y + Constants.PLAYER_H <= b.y) return false;
             return true;
         }
     }, {
         key: "run",
         value: function run(roomChan) {
-            var _this3 = this;
+            var _this4 = this;
 
             var collisions = function collisions() {
-                var gs = _this3.state;
+                var gs = _this4.state;
                 var players = gs.playerStates;
                 var user = gs.userState;
                 user.y += user.dy;
@@ -1516,22 +1627,17 @@ var Game = function () {
                 var _iteratorError = undefined;
 
                 try {
-                    for (var _iterator = gs.nonUserStates[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                        var player = _step.value;
+                    for (var _iterator = _this4.level.collidables[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                        var obj = _step.value;
 
-                        if (_this3.checkPlayerCollision(user, player)) {
-                            user.y -= user.dy;
-                            if (!_this3.checkPlayerCollision(user, player)) {
-                                user.y += user.dy;
-                                if (user.dy > 0) {
-                                    user.dy = 0;
-                                    user.can_jump = true;
-                                    user.y = player.y - 32;
-                                } else {
-                                    user.y = player.y + 32;
-                                }
+                        if (_this4.checkCollision(user, obj)) {
+                            if (user.dy > 0) {
+                                user.dy = 0;
+                                user.can_jump = true;
+                                user.y = obj.y - Constants.PLAYER_H;
                             } else {
-                                user.y += user.dy;
+                                user.dy = 0;
+                                user.y = obj.y + obj.h - user.top;
                             }
                         }
                     }
@@ -1551,41 +1657,21 @@ var Game = function () {
                 }
 
                 user.x += user.dx;
-            };
-            var draw = function draw() {
-                var ctx = _this3.canvas.getContext("2d");
-                var gs = _this3.state;
-                ctx.fillStyle = 'rgb(255, 255, 255)';
-                ctx.fillRect(0, 0, 640, 480);
-                ctx.fillStyle = 'rgb(0, 0, 0)';
-                var user = _this3.state.userState;
-                if (user.x_dir == -1) {
-                    ctx.translate(user.x + 32, user.y);
-                    ctx.scale(-1, 1);
-                    if (user.dx != 0) {
-                        user.frame = Math.floor(user.tick / 5) % 4;
-                        ctx.drawImage(_this3.spriteSheet, user.frame * 32, 32, 32, 32, 0, 0, 32, 32);
-                    } else {
-                        ctx.drawImage(_this3.spriteSheet, 0, 0, 32, 32, 0, 0, 32, 32);
-                    }
-                    ctx.setTransform(1, 0, 0, 1, 0, 0);
-                } else {
-                    if (user.dx != 0) {
-                        user.frame = Math.floor(user.tick / 5) % 4;
-                        ctx.drawImage(_this3.spriteSheet, user.frame * 32, 32, 32, 32, user.x, user.y, 32, 32);
-                    } else {
-                        ctx.drawImage(_this3.spriteSheet, 0, 0, 32, 32, user.x, user.y, 32, 32);
-                    }
-                }
                 var _iteratorNormalCompletion2 = true;
                 var _didIteratorError2 = false;
                 var _iteratorError2 = undefined;
 
                 try {
-                    for (var _iterator2 = _this3.state.nonUserStates[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-                        var player = _step2.value;
+                    for (var _iterator2 = _this4.level.collidables[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                        var _obj = _step2.value;
 
-                        ctx.fillRect(player.x, player.y, 32, 32);
+                        if (_this4.checkCollision(user, _obj)) {
+                            if (user.dx > 0) {
+                                user.x = _obj.x - Constants.PLAYER_W + user.right;
+                            } else {
+                                user.x = _obj.x + _obj.w - user.left;
+                            }
+                        }
                     }
                 } catch (err) {
                     _didIteratorError2 = true;
@@ -1598,6 +1684,81 @@ var Game = function () {
                     } finally {
                         if (_didIteratorError2) {
                             throw _iteratorError2;
+                        }
+                    }
+                }
+            };
+            var draw = function draw() {
+                var ctx = _this4.canvas.getContext("2d");
+                var gs = _this4.state;
+                ctx.fillStyle = 'rgb(255, 255, 255)';
+                ctx.fillRect(0, 0, Constants.W, Constants.H);
+                ctx.fillStyle = 'rgb(0, 0, 0)';
+                var user = _this4.state.userState;
+                var _iteratorNormalCompletion3 = true;
+                var _didIteratorError3 = false;
+                var _iteratorError3 = undefined;
+
+                try {
+                    for (var _iterator3 = _this4.level.collidables[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+                        var obj = _step3.value;
+
+                        ctx.fillRect(obj.x - Camera.x, obj.y - Camera.y, obj.w, obj.h);
+                    }
+                } catch (err) {
+                    _didIteratorError3 = true;
+                    _iteratorError3 = err;
+                } finally {
+                    try {
+                        if (!_iteratorNormalCompletion3 && _iterator3.return) {
+                            _iterator3.return();
+                        }
+                    } finally {
+                        if (_didIteratorError3) {
+                            throw _iteratorError3;
+                        }
+                    }
+                }
+
+                if (user.x_dir === -1) {
+                    ctx.translate(user.x + Constants.PLAYER_W - Camera.x, user.y - Camera.y);
+                    ctx.scale(-1, 1);
+                    if (user.dx != 0) {
+                        user.frame = Math.floor(user.tick / 5) % 4;
+                        ctx.drawImage(_this4.spriteSheet, user.frame * Constants.PLAYER_W, Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H, 0, 0, Constants.PLAYER_W, Constants.PLAYER_H);
+                    } else {
+                        ctx.drawImage(_this4.spriteSheet, 0, 0, Constants.PLAYER_W, Constants.PLAYER_H, 0, 0, Constants.PLAYER_W, Constants.PLAYER_H);
+                    }
+                    ctx.setTransform(1, 0, 0, 1, 0, 0);
+                } else {
+                    if (user.dx != 0) {
+                        user.frame = Math.floor(user.tick / 5) % 4;
+                        ctx.drawImage(_this4.spriteSheet, user.frame * Constants.PLAYER_W, Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H, user.x - Camera.x, user.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
+                    } else {
+                        ctx.drawImage(_this4.spriteSheet, 0, 0, Constants.PLAYER_W, Constants.PLAYER_H, user.x - Camera.x, user.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
+                    }
+                }
+                var _iteratorNormalCompletion4 = true;
+                var _didIteratorError4 = false;
+                var _iteratorError4 = undefined;
+
+                try {
+                    for (var _iterator4 = _this4.state.nonUserStates[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+                        var player = _step4.value;
+
+                        ctx.fillRect(player.x - Camera.x, player.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
+                    }
+                } catch (err) {
+                    _didIteratorError4 = true;
+                    _iteratorError4 = err;
+                } finally {
+                    try {
+                        if (!_iteratorNormalCompletion4 && _iterator4.return) {
+                            _iterator4.return();
+                        }
+                    } finally {
+                        if (_didIteratorError4) {
+                            throw _iteratorError4;
                         }
                     }
                 }
@@ -1624,10 +1785,20 @@ var Game = function () {
             window.addEventListener('keydown', function (event) {
                 Key.onKeydown(event);
             }, false);
+            var check_bounds = function check_bounds(user) {
+                if (user.x < 0) user.x = 0;
+                if (user.x > Constants.LEVEL_W - Constants.PLAYER_W) user.x = Constants.LEVEL_W - Constants.PLAYER_W;
+                if (user.y < 0) user.y = 0;
+                if (user.y > Constants.LEVEL_H - Constants.PLAYER_H) {
+                    user.dy = 0;
+                    user.y = Constants.LEVEL_H - Constants.PLAYER_H;
+                    user.can_jump = true;
+                }
+            };
             var update = function update() {
                 var jump_v = 12;
                 var v = 4;
-                var gs = _this3.state;
+                var gs = _this4.state;
                 var user = gs.userState;
                 user.tick += 1;
                 user.dx = 0;
@@ -1645,17 +1816,14 @@ var Game = function () {
                 }
                 collisions();
                 user.dy += 0.7;
-                if (user.y > 480 - 32) {
-                    user.dy = 0;
-                    user.y = 480 - 32;
-                    user.can_jump = true;
-                }
+                check_bounds(user);
+                Camera.update(user);
             };
             var push = function push() {
                 roomChan.push("update_pos", {
-                    x: _this3.state.userState.x,
-                    y: _this3.state.userState.y,
-                    user_id: _this3.user_id
+                    x: _this4.state.userState.x,
+                    y: _this4.state.userState.y,
+                    user_id: _this4.user_id
                 });
             };
             setInterval(function () {
@@ -1692,7 +1860,7 @@ var App = function () {
     }, {
         key: "run",
         value: function run() {
-            var _this4 = this;
+            var _this5 = this;
 
             this.init();
             // chan.onClose(e => console.log("channel closed", e))
@@ -1704,24 +1872,24 @@ var App = function () {
             // Start the game loop
             game.run(this.roomChan);
             this.roomChan.on("update_pos", function (msg) {
-                if (msg.user_id === _this4.game.user_id) {
+                if (msg.user_id === _this5.game.user_id) {
                     return;
                 }
-                var changedPlayer = _this4.game.state.playerStates.filter(function (x) {
+                var changedPlayer = _this5.game.state.playerStates.filter(function (x) {
                     return x.id === msg.user_id;
                 });
                 if (changedPlayer.length === 1) {
                     changedPlayer[0].x = msg.x;
                     changedPlayer[0].y = msg.y;
                 } else {
-                    _this4.game.state.playerStates.push(new PlayerState(msg.x, msg.y, msg.user_id));
+                    _this5.game.state.playerStates.push(new PlayerState(msg.x, msg.y, msg.user_id));
                 }
             });
             this.roomChan.on("remove_player", function (data) {
-                var player_idx = _this4.game.state.playerStates.findIndex(function (x) {
+                var player_idx = _this5.game.state.playerStates.findIndex(function (x) {
                     return x.id === data.user_id;
                 });
-                _this4.game.state.playerStates.splice(player_idx, 1);
+                _this5.game.state.playerStates.splice(player_idx, 1);
             });
         }
     }]);
