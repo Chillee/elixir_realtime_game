@@ -1535,11 +1535,7 @@ var App = function () {
             });
             this.roomChan.on("remove_blocks", function (data) {
                 _this2.game.state.level.collidables = _this2.game.state.level.collidables.filter(function (x) {
-<<<<<<< HEAD
                     return !(x instanceof entities_1.PlayerBlock && data.block_ids.indexOf(x.id) !== -1);
-=======
-                    return !(x instanceof entities_1.PlayerBlock && data.ids.indexOf(x.id) !== -1);
->>>>>>> 946f85516067dcb93912dc7d52df397e4bea06d6
                 });
             });
             this.roomChan.on("overview_data", function (data) {
@@ -1626,7 +1622,7 @@ var Constants = function Constants() {
 
 Constants.TEAMS = 2;
 Constants.TEAM_NAMES = ["Blue", "Red"];
-Constants.DESTROY_RADIUS = 10000;
+Constants.DESTROY_RADIUS = 128;
 Constants.PLAYER_W = 32;
 Constants.PLAYER_H = 32;
 Constants.W = 640;
@@ -2014,7 +2010,7 @@ var Game = function () {
                                         }
                                     }
                                 }
-                            } else if (obj instanceof entities_1.PlayerBlock) {
+                            } else if (obj instanceof entities_1.PlayerBlock && obj.team === user.team) {
                                 user.y -= user.dy;
                                 if (!_this.checkCollision(user, obj)) {
                                     user.y += user.dy;
@@ -2070,7 +2066,7 @@ var Game = function () {
                     for (var _iterator3 = _this.state.level.collidables[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
                         var _obj = _step3.value;
 
-                        if (_this.checkCollision(user, _obj) && !(_obj instanceof entities_1.PlayerBlock)) {
+                        if (_this.checkCollision(user, _obj) && !(_obj instanceof entities_1.PlayerBlock && _obj.team === user.team)) {
                             if (_obj instanceof entities_1.ScoringArea) {
                                 if (_obj.team === _this.state.user_team) {
                                     var _iteratorNormalCompletion5 = true;

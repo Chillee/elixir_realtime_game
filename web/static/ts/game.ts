@@ -126,7 +126,7 @@ export class Game {
                 }
               }
             }
-          } else if (obj instanceof PlayerBlock) {
+          } else if (obj instanceof PlayerBlock && obj.team === user.team) {
             user.y -= user.dy;
             if (!this.checkCollision(user, obj)) {
               user.y += user.dy;
@@ -161,7 +161,7 @@ export class Game {
       }
       user.x += user.dx;
       for (const obj of this.state.level.collidables) {
-        if (this.checkCollision(user, obj) && !(obj instanceof PlayerBlock)) {
+        if (this.checkCollision(user, obj) && !(obj instanceof PlayerBlock && obj.team === user.team)) {
           if (obj instanceof ScoringArea) {
             if (obj.team === this.state.user_team) {
               for (const flag of this.state.flags) {
