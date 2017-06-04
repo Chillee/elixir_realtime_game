@@ -1472,7 +1472,7 @@ var App = function () {
             // Start the game loop
             game.run(this.roomChan);
             this.roomChan.on("update_player", function (msg) {
-                if (msg.user_id === _this.game.user_id) {
+                if (msg.id === _this.game.state.user_id) {
                     return;
                 }
                 var changedPlayer = _this.game.state.playerStates.filter(function (x) {
@@ -1487,11 +1487,22 @@ var App = function () {
             });
             this.roomChan.on("remove_player", function (data) {
                 var player_idx = _this.game.state.playerStates.findIndex(function (x) {
-                    return x.id === data.user_id;
+                    return x.id === data.id;
                 });
-                _this.game.state.playerStates.splice(player_idx, 1);
+                console.log(data.id, _this.game.state.user_id);
+                console.log(_this.game.state.playerStates);
+                if (data.id !== _this.game.state.user_id) {
+                    _this.game.state.playerStates.splice(player_idx, 1);
+                } else {
+                    var new_id = Math.floor(Math.random() * 10000);
+                    _this.game.state.playerStates.find(function (x) {
+                        return x.id === data.id;
+                    }).id = new_id;
+                    _this.game.state.user_id = new_id;
+                }
             });
             this.roomChan.on("init_data", function (data) {
+                console.log(data);
                 var _iteratorNormalCompletion = true;
                 var _didIteratorError = false;
                 var _iteratorError = undefined;
@@ -1502,6 +1513,8 @@ var App = function () {
 
                         _this.game.state.level.collidables.push(new entities_1.PlayerBlock(block.x, block.y, block.id, block.team));
                     }
+                    // this.game.state.user_id = data.id;
+                    // this.game.state.user_team = data.team;
                 } catch (err) {
                     _didIteratorError = true;
                     _iteratorError = err;
@@ -1516,6 +1529,13 @@ var App = function () {
                         }
                     }
                 }
+            });
+            this.roomChan.on("add_block", function (data) {
+                _this.game.state.level.collidables.push(new entities_1.PlayerBlock(data.x, data.y, data.id, data.team));
+            });
+            this.roomChan.on("overview_data", function (data) {
+                _this.game.state.flag_holders = data.flag_holder;
+                _this.game.state.score = data.score;
             });
         }
     }]);
@@ -1788,11 +1808,10 @@ var Game = function () {
     function Game() {
         _classCallCheck(this, Game);
 
-        this.user_id = Math.floor(Math.random() * 10000);
         this.canvas = document.getElementById("gameCanvas");
         this.spriteSheet = new Image();
         this.spriteSheet.src = "images/sheet.png";
-        this.state = new state_1.GameState(this.user_id);
+        this.state = new state_1.GameState();
     }
 
     _createClass(Game, [{
@@ -2066,7 +2085,7 @@ var Game = function () {
                 camera_1.Camera.update(user);
             };
             var push = function push() {
-                roomChan.push("update_player", new PlayerData(_this.state.userState.x, _this.state.userState.y, _this.user_id, _this.state.user_team, _this.state.user_nickname));
+                roomChan.push("update_player", new PlayerData(_this.state.userState.x, _this.state.userState.y, _this.state.user_id, _this.state.user_team, _this.state.user_nickname));
             };
             setInterval(function () {
                 update();
@@ -2119,16 +2138,16 @@ var PlayerState = function PlayerState(x, y, id, team) {
 exports.PlayerState = PlayerState;
 
 var GameState = function () {
-    function GameState(user_id) {
+    function GameState() {
         _classCallCheck(this, GameState);
 
+        this.user_id = Math.floor(Math.random() * 10000);
         this.score = [];
         this.flag_holders = [];
         this.deathAnimFrame = 0;
         this.user_team = 0;
         this.user_nickname = "horsey";
         this.fps = 60;
-        this.user_id = user_id;
         this.playerStates = new Array(new PlayerState(0, 0, this.user_id, this.user_team));
         this.score = new Array(constants_1.Constants.TEAMS);
         this.flag_holders = new Array(constants_1.Constants.TEAMS);

@@ -21,7 +21,6 @@ export class PlayerData {
 }
 
 export class Game {
-  user_id = Math.floor(Math.random() * 10000);
   canvas: HTMLCanvasElement;
   spriteSheet: HTMLImageElement;
   state: GameState;
@@ -30,7 +29,7 @@ export class Game {
     this.canvas = <HTMLCanvasElement>document.getElementById("gameCanvas");
     this.spriteSheet = new Image();
     this.spriteSheet.src = "images/sheet.png";
-    this.state = new GameState(this.user_id);
+    this.state = new GameState();
   }
 
   private checkCollision(a: PlayerState, b: Collidable) {
@@ -254,7 +253,7 @@ export class Game {
       roomChan.push("update_player", new PlayerData(
         this.state.userState.x,
         this.state.userState.y,
-        this.user_id,
+        this.state.user_id,
         this.state.user_team,
         this.state.user_nickname))
     }

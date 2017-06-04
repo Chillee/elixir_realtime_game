@@ -18,6 +18,5 @@
 
 
     <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
-    <script>window.userID = "<%= assigns[:user_id] %>"</script>
   </body>
 </html>

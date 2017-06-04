@@ -36,13 +36,8 @@ class App {
     // Start the game loop
     game.run(this.roomChan);
 
-<<<<<<< HEAD
-    this.roomChan.on("update_player", (msg: { x: number, y: number, user_id: number }) => {
-      if (msg.user_id === this.game.user_id) {
-=======
     this.roomChan.on("update_player", (msg: PlayerData) => {
-      if (msg.id === this.game.user_id) {
->>>>>>> 4aa583152701ee424ed66831eab299c267634cb4
+      if (msg.id === this.game.state.user_id) {
         return;
       }
       const changedPlayer = this.game.state.playerStates.filter(x => x.id === msg.id);
@@ -54,19 +49,26 @@ class App {
       }
     });
 
-    this.roomChan.on("remove_player", (data: { user_id: number }) => {
-      const player_idx = this.game.state.playerStates.findIndex((x) => x.id === data.user_id);
-      this.game.state.playerStates.splice(player_idx, 1);
+    this.roomChan.on("remove_player", (data) => {
+      const player_idx = this.game.state.playerStates.findIndex((x) => x.id === data.id);
+      console.log(data.id, this.game.state.user_id);
+      console.log(this.game.state.playerStates)
+      if (data.id !== this.game.state.user_id) {
+        this.game.state.playerStates.splice(player_idx, 1);
+      } else {
+        const new_id = Math.floor(Math.random() * 10000);
+        (this.game.state.playerStates.find(x => x.id === data.id) as PlayerState).id = new_id;
+        this.game.state.user_id = new_id;
+      }
     });
 
     this.roomChan.on("init_data", (data : { blocks: Array<PlayerData>, id: number, team: number }) => {
+      console.log(data);
       for (const block of data.blocks) {
         this.game.state.level.collidables.push(new PlayerBlock(block.x, block.y, block.id, block.team));
       }
-<<<<<<< HEAD
-=======
-      this.game.state.user_id = data.id;
-      this.game.state.user_team = data.team;
+      // this.game.state.user_id = data.id;
+      // this.game.state.user_team = data.team;
     });
 
     this.roomChan.on("add_block", (data: PlayerData) => {
@@ -76,7 +78,6 @@ class App {
     this.roomChan.on("overview_data", (data : { flag_holder: Array<number | null>, score: Array<number> }) => {
       this.game.state.flag_holders = data.flag_holder;
       this.game.state.score = data.score;
->>>>>>> 4aa583152701ee424ed66831eab299c267634cb4
     });
   }
 

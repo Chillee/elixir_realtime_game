@@ -25,18 +25,17 @@ export class PlayerState {
 }
 
 export class GameState {
+  user_id = Math.floor(Math.random() * 10000);
   score = [] as Array<number>;
   flag_holders = [] as Array<number | null>;
   deathAnimFrame = 0;
   user_team = 0;
   user_nickname = "horsey";
   level: Level;
-  user_id: number;
   fps = 60;
   playerStates: Array<PlayerState>
 
-  constructor(user_id: number) {
-    this.user_id = user_id;
+  constructor() {
     this.playerStates = new Array(new PlayerState(0, 0, this.user_id, this.user_team));
 
     this.score = new Array(Constants.TEAMS);
