@@ -14,32 +14,25 @@ defmodule Chat.RoomChannel do
   """
   def join("rooms:lobby", message, socket) do
     Process.flag(:trap_exit, true)
-    send(self, {:after_join, message})
+    send(self(), {:after_join, message})
     {:ok, socket}
   end
 
-  def join("rooms:" <> _private_subtopic, _message, _socket) do
-    {:error, %{reason: "unauthorized"}}
-  end
-
   def handle_info({:after_join, msg}, socket) do
-    broadcast! socket, "user:entered", %{user: msg["user"]}
     push socket, "join", %{status: "connected"}
-    {:noreply, socket}
-  end
-  def handle_info(:ping, socket) do
-    push socket, "new:msg", %{user: "SYSTEM", body: "ping"}
+    push socket, "world_data", %{players: Chat.WorldState.val()}
     {:noreply, socket}
   end
 
   def terminate(reason, socket) do
     Logger.debug"> leave #{inspect reason}"
     broadcast! socket, "remove_player", %{user_id: socket.assigns.user_id}
-    :ok
+    Chat.WorldState.insert(socket.assigns.player_state);
+    :ok 
   end
 
   def handle_in("update_pos", msg, socket) do
     broadcast! socket, "update_pos", %{x: msg["x"], y: msg["y"], user_id: msg["user_id"]}
-    {:reply, :ok, socket}
+    {:reply, :ok, assign(socket, :player_state, %{x: msg["x"], y: msg["y"]})}
   end
 end

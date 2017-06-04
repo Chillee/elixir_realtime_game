@@ -1845,6 +1845,8 @@ var App = function () {
     _createClass(App, null, [{
         key: "init",
         value: function init() {
+            var _this5 = this;
+
             this.socket = new phoenix_1.Socket("/socket", {});
             this.socket.connect();
             this.roomChan = this.socket.channel("rooms:lobby", {});
@@ -1856,21 +1858,6 @@ var App = function () {
             this.roomChan.onError(function (e) {
                 return console.log("something went wrong", e);
             });
-        }
-    }, {
-        key: "run",
-        value: function run() {
-            var _this5 = this;
-
-            this.init();
-            // chan.onClose(e => console.log("channel closed", e))
-            this.game = new Game();
-            var game = this.game;
-            var c = game.canvas;
-            var sheet = game.spriteSheet;
-            var gs = game.state;
-            // Start the game loop
-            game.run(this.roomChan);
             this.roomChan.on("update_pos", function (msg) {
                 if (msg.user_id === _this5.game.user_id) {
                     return;
@@ -1891,6 +1878,45 @@ var App = function () {
                 });
                 _this5.game.state.playerStates.splice(player_idx, 1);
             });
+            this.roomChan.on("world_data", function (data) {
+                var _iteratorNormalCompletion5 = true;
+                var _didIteratorError5 = false;
+                var _iteratorError5 = undefined;
+
+                try {
+                    for (var _iterator5 = data.players[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+                        var player = _step5.value;
+
+                        _this5.game.state.playerStates.push(new PlayerState(player.x, player.y, -1));
+                    }
+                } catch (err) {
+                    _didIteratorError5 = true;
+                    _iteratorError5 = err;
+                } finally {
+                    try {
+                        if (!_iteratorNormalCompletion5 && _iterator5.return) {
+                            _iterator5.return();
+                        }
+                    } finally {
+                        if (_didIteratorError5) {
+                            throw _iteratorError5;
+                        }
+                    }
+                }
+            });
+        }
+    }, {
+        key: "run",
+        value: function run() {
+            this.init();
+            // chan.onClose(e => console.log("channel closed", e))
+            this.game = new Game();
+            var game = this.game;
+            var c = game.canvas;
+            var sheet = game.spriteSheet;
+            var gs = game.state;
+            // Start the game loop
+            game.run(this.roomChan);
         }
     }]);
 

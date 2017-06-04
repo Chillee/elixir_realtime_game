@@ -329,21 +329,6 @@ class App {
     this.roomChan.join().receive("ignore", () => console.log("auth error"))
       .receive("ok", () => { console.log("join ok") })
     this.roomChan.onError(e => console.log("something went wrong", e))
-  }
-
-  public static run() {
-    this.init();
-    // chan.onClose(e => console.log("channel closed", e))
-
-    this.game = new Game();
-    const game = this.game;
-    const c = game.canvas;
-    const sheet = game.spriteSheet;
-    const gs = game.state;
-
-    // Start the game loop
-    game.run(this.roomChan);
-
     this.roomChan.on("update_pos", (msg:{x: number, y:number, user_id: number}) => {
       if (msg.user_id === this.game.user_id) {
         return;
@@ -361,6 +346,27 @@ class App {
       const player_idx = this.game.state.playerStates.findIndex((x) => x.id === data.user_id);
       this.game.state.playerStates.splice(player_idx, 1);
     });
+
+    this.roomChan.on("world_data", (data) => {
+      for (const player of data.players) {
+        this.game.state.playerStates.push(new PlayerState(player.x, player.y, -1));
+      }
+    })
+  }
+
+  public static run() {
+    this.init();
+    // chan.onClose(e => console.log("channel closed", e))
+
+    this.game = new Game();
+    const game = this.game;
+    const c = game.canvas;
+    const sheet = game.spriteSheet;
+    const gs = game.state;
+
+    // Start the game loop
+    game.run(this.roomChan);
+
   }
 
 }
