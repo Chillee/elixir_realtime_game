@@ -8,8 +8,8 @@ class Constants {
   static readonly PLAYER_H = 32;
   static readonly W = 640;
   static readonly H = 640;
-  static readonly LEVEL_W = 1024;
-  static readonly LEVEL_H = 1024;
+  static LEVEL_W = 0;
+  static LEVEL_H = 0;
 }
 
 class Camera {
@@ -66,6 +66,10 @@ interface Collidable {
   y: number;
   w: number;
   h: number;
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
 }
 
 class Block implements Collidable {
@@ -73,6 +77,26 @@ class Block implements Collidable {
   y = 0;
   w = Constants.PLAYER_W;
   h = Constants.PLAYER_H;
+  left = 0;
+  right = 0;
+  top = 0;
+  bottom = 0;
+
+  constructor(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+  }
+}
+
+class Spike implements Collidable {
+  x = 0;
+  y = 0;
+  w = Constants.PLAYER_W;
+  h = Constants.PLAYER_H;
+  left = 0;
+  right = 0;
+  top = Constants.PLAYER_H / 2;
+  bottom = 0;
 
   constructor(x: number, y: number) {
     this.x = x;
@@ -81,6 +105,8 @@ class Block implements Collidable {
 }
 
 class Level {
+  spawnX: number;
+  spawnY: number;
   collidables: Array<Collidable>;
 
   addDeadPlayer(x: number, y: number) {
@@ -91,7 +117,11 @@ class Level {
     this.collidables.push(new Block(x, y));
   }
 
-  create() {
+  addSpike(x: number, y: number) {
+    this.collidables.push(new Spike(x, y));
+  }
+
+  create(gs: GameState) {
     this.collidables = new Array();
 
     let levelImage = new Image();
@@ -104,8 +134,11 @@ class Level {
       ctx.drawImage(levelImage, 0, 0, levelImage.width, levelImage.height);
       let data = ctx.getImageData(0, 0, levelImage.width, levelImage.height).data;
 
-      for (let y = 0; y < levelImage.width; y++) {
-        for (let x = 0; x < levelImage.height; x++) {
+      Constants.LEVEL_W = levelImage.width * 32;
+      Constants.LEVEL_H = levelImage.height * 32;
+
+      for (let y = 0; y < levelImage.height; y++) {
+        for (let x = 0; x < levelImage.width; x++) {
           let r = data[(x + y * levelImage.width) * 4];
           let g = data[(x + y * levelImage.width) * 4 + 1];
           let b = data[(x + y * levelImage.width) * 4 + 2];
@@ -113,8 +146,14 @@ class Level {
           if (r === 0 && g === 0 && b === 0) {
             this.addBlock(x * 32, y * 32);
           }
-          else if (r == 0 && g == 255 && b == 0) {
-
+          if (r === 0 && g === 255 && b === 0) {
+            this.spawnX = x * 32;
+            this.spawnY = y * 32;
+            gs.userState.x = x * 32;
+            gs.userState.y = y * 32;
+          }
+          if (r === 255 && g === 0 && b === 0) {
+            this.addSpike(x * 32, y * 32);
           }
         }
       }
@@ -141,6 +180,7 @@ class GameState {
 }
 
 class Game {
+  deathAnimFrame = 0;
   user_id = Math.floor(Math.random() * 10000);
   canvas: HTMLCanvasElement;
   spriteSheet: HTMLImageElement;
@@ -154,13 +194,21 @@ class Game {
     this.state = new GameState(this.user_id);
 
     this.level = new Level();
-    this.level.create();
+    this.level.create(this.state);
   }
 
   private checkCollision(a: PlayerState, b: Collidable) {
-    if (a.x >= b.x + b.w - a.left || a.x + Constants.PLAYER_W - a.right <= b.x) return false;
-    if (a.y >= b.y + b.h - a.top || a.y + Constants.PLAYER_H <= b.y) return false;
+    if (a.x >= b.x + b.w - a.left - b.right || a.x + Constants.PLAYER_W - a.right - b.left <= b.x) return false;
+    if (a.y >= b.y + b.h - a.top - b.bottom || a.y + Constants.PLAYER_H - b.top <= b.y) return false;
     return true;
+  }
+
+  private killPlayer() {
+    this.deathAnimFrame = 10;
+    this.state.userState.x = this.level.spawnX;
+    this.state.userState.y = this.level.spawnY;
+    this.state.userState.dx = 0;
+    this.state.userState.dy = 0;
   }
 
   run(roomChan: Channel) {
@@ -168,17 +216,23 @@ class Game {
       const gs = this.state;
       let players = gs.playerStates;
       let user = gs.userState;
+
+      user.can_jump = false;
+
       user.y += user.dy;
       for (const obj of this.level.collidables) {
         if (this.checkCollision(user, obj)) {
           if (user.dy > 0) {
             user.dy = 0;
             user.can_jump = true;
-            user.y = obj.y - Constants.PLAYER_H;
+            user.y = obj.y - Constants.PLAYER_H + obj.top;
           }
           else {
             user.dy = 0;
-            user.y = obj.y + obj.h - user.top;
+            user.y = obj.y + obj.h - user.top - obj.bottom;
+          }
+          if (obj instanceof Spike) {
+            this.killPlayer();
           }
         }
       }
@@ -186,10 +240,10 @@ class Game {
       for (const obj of this.level.collidables) {
         if (this.checkCollision(user, obj)) {
           if (user.dx > 0) {
-            user.x = obj.x - Constants.PLAYER_W + user.right;
+            user.x = obj.x - Constants.PLAYER_W + user.right + obj.left;
           }
           else {
-            user.x = obj.x + obj.w - user.left;
+            user.x = obj.x + obj.w - user.left - obj.right;
           }
         }
       }
@@ -204,7 +258,11 @@ class Game {
       const user = this.state.userState;
 
       for (const obj of this.level.collidables) {
-        ctx.fillRect(obj.x - Camera.x, obj.y - Camera.y, obj.w, obj.h);
+        if (obj instanceof Block)
+          ctx.fillRect(obj.x - Camera.x, obj.y - Camera.y, obj.w, obj.h);
+        if (obj instanceof Spike)
+          ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 4, 0, Constants.PLAYER_W, Constants.PLAYER_H,
+            obj.x - Camera.x, obj.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
       }
 
       if (user.x_dir === -1) {
@@ -233,6 +291,17 @@ class Game {
       }
       for (const player of this.state.nonUserStates) {
         ctx.fillRect(player.x - Camera.x, player.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
+      }
+
+      if (this.deathAnimFrame >= 5) {
+        this.deathAnimFrame--;
+        ctx.fillStyle = 'rgb(0, 0, 0)';
+        ctx.fillRect(0, 0, Constants.W, Constants.H);
+      }
+      else if (this.deathAnimFrame > 0) {
+        this.deathAnimFrame--;
+        ctx.fillStyle = 'rgb(255, 255, 255)';
+        ctx.fillRect(0, 0, Constants.W, Constants.H);
       }
     }
 
@@ -283,18 +352,23 @@ class Game {
       const gs = this.state;
       const user = gs.userState;
       user.tick += 1;
-      user.dx = 0;
       if (Key.isDown(Key.UP) && user.can_jump) {
         user.dy = -jump_v;
         user.can_jump = false;
       }
       if (Key.isDown(Key.LEFT)) {
-        user.dx = -v;
+        user.dx += (-v - user.dx) * 0.2;
         user.x_dir = -1;
       }
-      if (Key.isDown(Key.RIGHT)) {
-        user.dx = v;
+      else if (Key.isDown(Key.RIGHT)) {
+        user.dx += (v - user.dx) * 0.2;
         user.x_dir = 1;
+      }
+      else {
+        user.dx *= 0.98;
+        if (Math.abs(user.dx) < 1) {
+          user.dx = 0;
+        }
       }
       collisions();
       user.dy += 0.7;
@@ -344,7 +418,7 @@ class App {
     // Start the game loop
     game.run(this.roomChan);
 
-    this.roomChan.on("update_pos", (msg:{x: number, y:number, user_id: number}) => {
+    this.roomChan.on("update_pos", (msg: { x: number, y: number, user_id: number }) => {
       if (msg.user_id === this.game.user_id) {
         return;
       }
@@ -357,7 +431,7 @@ class App {
       }
     });
 
-    this.roomChan.on("remove_player", (data:{user_id: number}) => {
+    this.roomChan.on("remove_player", (data: { user_id: number }) => {
       const player_idx = this.game.state.playerStates.findIndex((x) => x.id === data.user_id);
       this.game.state.playerStates.splice(player_idx, 1);
     });
