@@ -21,6 +21,7 @@ defmodule Chat.OverViewState do
         GenServer.cast(:overview_state, {:add_player, msg})
     end
 
+
     def val() do
         GenServer.call(:overview_state, :val)
     end

@@ -50,6 +50,11 @@ defmodule Chat.RoomChannel do
     {:reply, :ok, socket}
   end
 
+  def handle_in("remove_blocks", msg, socket) do
+    broadcast! socket, "remove_blocks", msg
+    {:reply, :ok, socket}
+  end
+
   def handle_in("take_flag", msg, socket) do
     case Chat.OverViewState.take_flag(msg) do
       :fail -> {:reply, :fail, socket}

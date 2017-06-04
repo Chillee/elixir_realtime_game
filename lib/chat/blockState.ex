@@ -10,6 +10,10 @@ defmodule Chat.BlockState do
         GenServer.call(:world_state, :val)
     end
 
+    def remove_blocks(msg) do
+        GenServer.cast(:overview_state, {:remove_blocks, msg})
+    end
+
     def init() do
         {:ok, []}
     end
@@ -20,5 +24,9 @@ defmodule Chat.BlockState do
 
     def handle_call(:val, _from, val) do
         {:reply, val, val}
+    end
+
+    def handle_cast({:remove_blocks, block_ids}, val) do
+        {:noreply, Enum.filter(val, (fn x -> !Enum.member?(block_ids, val) end))}
     end
 end
