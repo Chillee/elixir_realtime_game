@@ -15,7 +15,7 @@ defmodule Chat.RoomChannel do
   def join("rooms:lobby", message, socket) do
     Process.flag(:trap_exit, true)
     send(self(), {:after_join, message})
-    :timer.send_interval(100, :overview_data)
+    :timer.send_interval(1000 // 50, :overview_data)
     {:ok, socket}
   end
 
