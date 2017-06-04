@@ -35,6 +35,7 @@ defmodule Chat.RoomChannel do
     push socket, "overview_data", Chat.OverViewState.val()
     {:noreply, socket}
   end
+
   def handle_in("sudoku", msg, socket) do
     broadcast! socket, "remove_player", %{data: msg, new_id: :rand.uniform(100000)}
     broadcast! socket, "add_block", msg
@@ -52,6 +53,11 @@ defmodule Chat.RoomChannel do
       :fail -> {:reply, :fail, socket}
       :ok -> {:reply, :ok, socket}
     end
+  end
+
+  def handle_in("score_flag", msg, socket) do
+    Chat.OverViewState.score_flag(msg)
+    {:reply, :ok, socket}
   end
 
   def handle_in("update_player", msg, socket) do
