@@ -20,7 +20,7 @@ defmodule Chat.RoomChannel do
 
   def handle_info({:after_join, msg}, socket) do
     push socket, "join", %{status: "connected"}
-    push socket, "init_data", %{blocks: Chat.BlockState.val(), id: 0, team: 0}
+    push socket, "init_data", %{blocks: Chat.BlockState.val(), id: :rand.uniform(100000), team: 0}
     {:noreply, socket}
   end
 
@@ -31,9 +31,14 @@ defmodule Chat.RoomChannel do
   end
 
   def handle_in("sudoku", msg, socket) do
-    broadcast! socket, "remove_player", msg
+    broadcast! socket, "remove_player", %{data: msg, new_id: :rand.uniform(100000)}
     broadcast! socket, "add_block", msg
     Chat.BlockState.insert(msg);
+    {:reply, :ok, socket}
+  end
+
+  def handle_in("death", msg, socket) do
+    broadcast! socket, "remove_player", %{data: msg, new_id: :rand.uniform(100000)}
     {:reply, :ok, socket}
   end
 

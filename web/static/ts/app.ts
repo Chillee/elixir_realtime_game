@@ -50,10 +50,11 @@ class App {
       }
     });
 
-    this.roomChan.on("remove_player", (data) => {
+    this.roomChan.on("remove_player", (res) => {
+      const data = res.data;
+      const new_id = res.new_id;
       const player_idx = this.game.state.playerStates.findIndex((x) => x.id === data.id);
       console.log(data.id, this.game.state.user_id);
-      console.log(this.game.state.playerStates)
       if (data.id !== this.game.state.user_id) {
         this.game.state.playerStates.splice(player_idx, 1);
       } else {
@@ -64,11 +65,12 @@ class App {
     });
 
     this.roomChan.on("init_data", (data : { blocks: Array<PlayerData>, id: number, team: number }) => {
-      console.log(data);
       for (const block of data.blocks) {
         this.game.state.level.collidables.push(new PlayerBlock(block.x, block.y, block.id, block.team));
       }
-      // this.game.state.user_id = data.id;
+      (this.game.state.playerStates.find(x => x.id === this.game.state.user_id) as PlayerState).id = data.id;
+      this.game.state.user_id = data.id;
+
       // this.game.state.user_team = data.team;
     });
 

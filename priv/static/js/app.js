@@ -1486,24 +1486,24 @@ var App = function () {
                     _this.game.state.playerStates.push(new state_1.PlayerState(msg.x, msg.y, msg.id, msg.team));
                 }
             });
-            this.roomChan.on("remove_player", function (data) {
+            this.roomChan.on("remove_player", function (res) {
+                var data = res.data;
+                var new_id = res.new_id;
                 var player_idx = _this.game.state.playerStates.findIndex(function (x) {
                     return x.id === data.id;
                 });
                 console.log(data.id, _this.game.state.user_id);
-                console.log(_this.game.state.playerStates);
                 if (data.id !== _this.game.state.user_id) {
                     _this.game.state.playerStates.splice(player_idx, 1);
                 } else {
-                    var new_id = Math.floor(Math.random() * 10000);
+                    var _new_id = Math.floor(Math.random() * 10000);
                     _this.game.state.playerStates.find(function (x) {
                         return x.id === data.id;
-                    }).id = new_id;
-                    _this.game.state.user_id = new_id;
+                    }).id = _new_id;
+                    _this.game.state.user_id = _new_id;
                 }
             });
             this.roomChan.on("init_data", function (data) {
-                console.log(data);
                 var _iteratorNormalCompletion = true;
                 var _didIteratorError = false;
                 var _iteratorError = undefined;
@@ -1514,8 +1514,6 @@ var App = function () {
 
                         _this.game.state.level.collidables.push(new entities_1.PlayerBlock(block.x, block.y, block.id, block.team));
                     }
-                    // this.game.state.user_id = data.id;
-                    // this.game.state.user_team = data.team;
                 } catch (err) {
                     _didIteratorError = true;
                     _iteratorError = err;
@@ -1530,6 +1528,12 @@ var App = function () {
                         }
                     }
                 }
+
+                _this.game.state.playerStates.find(function (x) {
+                    return x.id === _this.game.state.user_id;
+                }).id = data.id;
+                _this.game.state.user_id = data.id;
+                // this.game.state.user_team = data.team;
             });
             this.roomChan.on("add_block", function (data) {
                 _this.game.state.level.collidables.push(new entities_1.PlayerBlock(data.x, data.y, data.id, data.team));
@@ -2244,7 +2248,7 @@ var GameState = function () {
     function GameState() {
         _classCallCheck(this, GameState);
 
-        this.user_id = Math.floor(Math.random() * 10000);
+        this.user_id = 0;
         this.score = [];
         this.flags = [];
         this.deathAnimFrame = 0;

@@ -27,7 +27,7 @@ export class PlayerState {
 
 export class GameState {
   roomChan: Channel;
-  user_id = Math.floor(Math.random() * 10000);
+  user_id = 0;
   score = [] as Array<number>;
   flags = [] as Array<Flag>;
   deathAnimFrame = 0;
