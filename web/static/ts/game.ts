@@ -84,7 +84,7 @@ export class Game {
         ids.push(obj.id);
       }
     }
-    this.state.roomChan.push("remove_blocks", ids);
+    this.state.roomChan.push("remove_blocks", {block_ids: ids});
     this.teleportPlayer();
   }
 

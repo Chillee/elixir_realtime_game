@@ -1533,9 +1533,9 @@ var App = function () {
             this.roomChan.on("add_block", function (data) {
                 _this2.game.state.level.collidables.push(new entities_1.PlayerBlock(data.x, data.y, data.id, data.team));
             });
-            this.roomChan.on("remove_blocks", function (ids) {
+            this.roomChan.on("remove_blocks", function (data) {
                 _this2.game.state.level.collidables = _this2.game.state.level.collidables.filter(function (x) {
-                    return !(x instanceof entities_1.PlayerBlock && ids.indexOf(x.id) !== -1);
+                    return !(x instanceof entities_1.PlayerBlock && data.block_ids.indexOf(x.id) !== -1);
                 });
             });
             this.roomChan.on("overview_data", function (data) {
@@ -1943,7 +1943,7 @@ var Game = function () {
                 }
             }
 
-            this.state.roomChan.push("remove_blocks", ids);
+            this.state.roomChan.push("remove_blocks", { block_ids: ids });
             this.teleportPlayer();
         }
     }, {

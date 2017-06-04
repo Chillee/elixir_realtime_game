@@ -2,7 +2,7 @@ defmodule Chat.OverViewState do
     use GenServer
 
     def start_link() do
-        GenServer.start_link(__MODULE__, %{flag_holder: [nil, nil], score: [0, 0], players: []}, name: :overview_state)
+        GenServer.start_link(__MODULE__, %{flag_holder: [nil, nil], score: [0, 0]}, name: :overview_state)
     end
 
     def take_flag(msg) do
