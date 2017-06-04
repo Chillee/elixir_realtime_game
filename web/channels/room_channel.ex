@@ -21,7 +21,7 @@ defmodule Chat.RoomChannel do
 
   def handle_info({:after_join, msg}, socket) do
     push socket, "join", %{status: "connected"}
-    push socket, "init_data", %{blocks: Chat.BlockState.val(), id: :rand.uniform(100000), team: 0}
+    push socket, "init_data", %{blocks: Chat.BlockState.val(), id: :rand.uniform(100000), team: :rand.uniform(2) - 1}
     {:noreply, socket}
   end
 
