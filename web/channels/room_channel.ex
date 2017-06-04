@@ -15,6 +15,7 @@ defmodule Chat.RoomChannel do
   def join("rooms:lobby", message, socket) do
     Process.flag(:trap_exit, true)
     send(self(), {:after_join, message})
+    :timer.send_interval(500, :overview_data)
     {:ok, socket}
   end
 
@@ -30,6 +31,10 @@ defmodule Chat.RoomChannel do
     :ok 
   end
 
+  def handle_in("overview_data", msg, socket) do
+    push socket, "overview_data", Chat.OverViewState.val()
+    {:reply, :ok, socket}
+  end
   def handle_in("sudoku", msg, socket) do
     broadcast! socket, "remove_player", %{data: msg, new_id: :rand.uniform(100000)}
     broadcast! socket, "add_block", msg
@@ -44,8 +49,8 @@ defmodule Chat.RoomChannel do
 
   def handle_in("take_flag", msg, socket) do
     case Chat.OverViewState.take_flag(msg) do
-      {:reply, {:fail}, _} -> {:reply, :fail, socket}
-      {:reply, {:ok}, _} -> {:reply, :ok, socket}
+      :fail -> {:reply, :fail, socket}
+      :ok -> {:reply, :ok, socket}
     end
   end
 

@@ -1433,6 +1433,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var phoenix_1 = require("phoenix");
+var constants_1 = require("./constants");
 var state_1 = require("./state");
 var entities_1 = require("./entities");
 var game_1 = require("./game");
@@ -1471,7 +1472,7 @@ var App = function () {
             var sheet = game.spriteSheet;
             var gs = game.state;
             // Start the game loop
-            game.run(this.roomChan);
+            game.run();
             this.roomChan.on("update_player", function (msg) {
                 if (msg.id === _this.game.state.user_id) {
                     return;
@@ -1539,7 +1540,9 @@ var App = function () {
                 _this.game.state.level.collidables.push(new entities_1.PlayerBlock(data.x, data.y, data.id, data.team));
             });
             this.roomChan.on("overview_data", function (data) {
-                _this.game.state.flag_holders = data.flag_holder;
+                for (var i = 0; i < constants_1.Constants.TEAMS; i++) {
+                    _this.game.state.flags[i].holding_id = data.flag_holder[i];
+                }
                 _this.game.state.score = data.score;
             });
         }

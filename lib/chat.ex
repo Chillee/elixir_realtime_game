@@ -11,6 +11,7 @@ defmodule Chat do
       # Start the endpoint when the application starts
       supervisor(Chat.Endpoint, []),
       supervisor(Chat.BlockState, []),
+      supervisor(Chat.OverViewState, []),
       # Start your own worker by calling: Chat.Worker.start_link(arg1, arg2, arg3)
       # worker(Chat.Worker, [arg1, arg2, arg3]),
     ]
