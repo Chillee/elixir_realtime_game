@@ -35,7 +35,7 @@ class App {
     const gs = game.state;
 
     // Start the game loop
-    game.run(this.roomChan);
+    game.run();
 
     this.roomChan.on("update_player", (msg: PlayerData) => {
       if (msg.id === this.game.state.user_id) {
@@ -79,7 +79,9 @@ class App {
     });
 
     this.roomChan.on("overview_data", (data : { flag_holder: Array<number | null>, score: Array<number> }) => {
-      this.game.state.flag_holders = data.flag_holder;
+      for (let i = 0; i < Constants.TEAMS; i++) {
+        this.game.state.flags[i].holding_id = data.flag_holder[i];
+      }
       this.game.state.score = data.score;
     });
   }

@@ -1,4 +1,4 @@
-import { Level, Collidable, PlayerBlock, Spike, Block, Flag } from "./entities";
+import { Level, Collidable, PlayerBlock, Spike, Block, Flag, ScoringArea } from "./entities";
 import { GameState, PlayerState } from "./state";
 import { Constants } from "./constants";
 import { Channel } from "phoenix";
@@ -41,12 +41,17 @@ export class Game {
   private takeFlag(flag: Flag) {
     this.state.roomChan.push("take_flag", {
       id: this.state.user_id,
-      team: this.state.user_team
+      team: flag.team
     }).receive("fail", () => {
       flag.holding_id = null;
     });
 
     flag.holding_id = this.state.user_id;
+  }
+
+  private scoreFlag() {
+    Console.log("scored flag");
+    //todo 
   }
 
   private sudoku() {
@@ -90,7 +95,15 @@ export class Game {
       user.y += user.dy;
       for (const obj of this.state.level.collidables) {
         if (this.checkCollision(user, obj)) {
-          if (obj instanceof PlayerBlock) {
+          if (obj instanceof ScoringArea) {
+            if (obj.team === this.state.user_team) {
+              for (const flag of this.state.flags) {
+                if (flag.holding_id === this.state.user_id) {
+                  this.scoreFlag();
+                }
+              }
+            }
+          } else if (obj instanceof PlayerBlock) {
             user.y -= user.dy;
             if (!this.checkCollision(user, obj)) {
               user.y += user.dy;
@@ -126,7 +139,15 @@ export class Game {
       user.x += user.dx;
       for (const obj of this.state.level.collidables) {
         if (this.checkCollision(user, obj) && !(obj instanceof PlayerBlock)) {
-          if (obj instanceof Flag) {
+          if (obj instanceof ScoringArea) {
+            if (obj.team === this.state.user_team) {
+              for (const flag of this.state.flags) {
+                if (flag.holding_id === this.state.user_id) {
+                  this.scoreFlag();
+                }
+              }
+            }
+          } else if (obj instanceof Flag) {
             if (obj.holding_id === null && obj.team !== this.state.user_team) {
               obj.holding_id = this.state.user_id;
               this.takeFlag(obj);
@@ -168,10 +189,19 @@ export class Game {
               obj.x - Camera.x, obj.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
           }
         }
+        if (obj instanceof ScoringArea) {
+          if (obj.team === 0) {
+            ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 4, Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H,
+              obj.x - Camera.x, obj.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
+          } else if (obj.team === 1) {
+            ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 5, Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H,
+              obj.x - Camera.x, obj.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
+          }
+        }
       }
 
       if (user.x_dir === -1) {
-        ctx.translate(user.x + Constants.PLAYER_W - Camera.x, user.y - Camera.y);
+        ctx.translate(Math.floor(user.x) + Constants.PLAYER_W - Camera.x, Math.floor(user.y) - Camera.y);
         ctx.scale(-1, 1);
         if (user.dx != 0) {
           user.frame = Math.floor(user.tick / 5) % 4;
@@ -188,18 +218,18 @@ export class Game {
       else {
         if (user.dx != 0) {
           user.frame = Math.floor(user.tick / 5) % 4;
-          ctx.drawImage(this.spriteSheet, user.frame * Constants.PLAYER_W, Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H, user.x - Camera.x, user.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
+          ctx.drawImage(this.spriteSheet, user.frame * Constants.PLAYER_W, Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H, Math.floor(user.x) - Camera.x, Math.floor(user.y) - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
         }
         else {
-          ctx.drawImage(this.spriteSheet, 0, 0, Constants.PLAYER_W, Constants.PLAYER_H, user.x - Camera.x, user.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
+          ctx.drawImage(this.spriteSheet, 0, 0, Constants.PLAYER_W, Constants.PLAYER_H, Math.floor(user.x) - Camera.x, Math.floor(user.y) - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
         }
       }
       for (const flag of this.state.flags) {
         if (flag.holding_id === this.state.user_id) {
           if (flag.team === 0) {
-            ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 2, 0, Constants.PLAYER_W, Constants.PLAYER_H, user.x - Camera.x, user.y - Camera.y - Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H);
+            ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 2, 0, Constants.PLAYER_W, Constants.PLAYER_H, Math.floor(user.x) - Camera.x, Math.floor(user.y) - Camera.y - Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H);
           } else if (flag.team === 1) {
-            ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 3, 0, Constants.PLAYER_W, Constants.PLAYER_H, user.x - Camera.x, user.y - Camera.y - Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H);
+            ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 3, 0, Constants.PLAYER_W, Constants.PLAYER_H, Math.floor(user.x) - Camera.x, Math.floor(user.y) - Camera.y - Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H);
           }
         }
       }
@@ -207,13 +237,13 @@ export class Game {
         for (const flag of this.state.flags) {
           if (flag.holding_id === player.id) {
             if (flag.team === 0) {
-              ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 2, 0, Constants.PLAYER_W, Constants.PLAYER_H, player.x - Camera.x, player.y - Camera.y - Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H);
+              ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 2, 0, Constants.PLAYER_W, Constants.PLAYER_H, Math.floor(player.x) - Camera.x, Math.floor(player.y) - Camera.y - Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H);
             } else if (flag.team === 1) {
-              ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 3, 0, Constants.PLAYER_W, Constants.PLAYER_H, user.x - Camera.x, user.y - Camera.y - Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H);
+              ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 3, 0, Constants.PLAYER_W, Constants.PLAYER_H, Math.floor(user.x) - Camera.x, Math.floor(user.y) - Camera.y - Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H);
             }
           }
         }
-        ctx.fillRect(player.x - Camera.x, player.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
+        ctx.fillRect(Math.floor(player.x) - Camera.x, Math.floor(player.y) - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
       }
 
       if (this.state.deathAnimFrame >= 5) {

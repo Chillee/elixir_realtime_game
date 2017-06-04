@@ -9,10 +9,6 @@ defmodule Chat.OverViewState do
         GenServer.call(:overview_state, {:take_flag, msg})
     end
 
-    def score_flag(data) do
-        GenServer.cast(:overview_state, {:return_flag, msg})
-    end
-
     def val() do
         GenServer.call(:overview_state, :val)
     end
@@ -27,10 +23,6 @@ defmodule Chat.OverViewState do
             nil -> {:reply, {:fail}, val}
             x -> {:reply, {:ok}, val}
         end
-    end
-
-    def handle_cast({:return_flag, team}, %{flag_holder: flags, score: score}) do
-        {:reply, %{flag_holder: Enum.map flags, }}
     end
 
     def handle_call(:val, _from, val) do
