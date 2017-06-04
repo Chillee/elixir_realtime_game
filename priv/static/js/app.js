@@ -1623,7 +1623,7 @@ var Constants = function Constants() {
 
 Constants.TEAMS = 2;
 Constants.TEAM_NAMES = ["Blue", "Red"];
-Constants.DESTROY_RADIUS = 200;
+Constants.DESTROY_RADIUS = 100;
 Constants.PLAYER_W = 32;
 Constants.PLAYER_H = 32;
 Constants.W = 640;
@@ -1907,8 +1907,6 @@ var Game = function () {
             var blockY = block.y + block.h / 2;
             var pX = this.state.userState.x + constants_1.Constants.PLAYER_W / 2;
             var pY = this.state.userState.y + constants_1.Constants.PLAYER_H / 2;
-            console.log("differencePos: ", blockX - pX, blockY - pY);
-            console.log("hypot: ", Math.hypot(blockX - pX, blockY - pY));
             return Math.hypot(blockX - pX, blockY - pY) < constants_1.Constants.DESTROY_RADIUS;
         }
     }, {
