@@ -1537,7 +1537,6 @@ var App = function () {
                 _this2.game.state.level.collidables = _this2.game.state.level.collidables.filter(function (x) {
                     return !(x instanceof entities_1.PlayerBlock && data.block_ids.indexOf(x.id) !== -1);
                 });
-                console.log(data.block_ids);
             });
             this.roomChan.on("overview_data", function (data) {
                 for (var i = 0; i < constants_1.Constants.TEAMS; i++) {
