@@ -2130,17 +2130,19 @@ var Game = function () {
                                         }
                                     }
                                 }
-                            } else if (obj instanceof entities_1.PlayerBlock && obj.team === user.team) {
-                                user.y -= user.dy;
-                                if (!_this.checkCollision(user, obj)) {
-                                    user.y += user.dy;
-                                    if (user.dy > 0) {
-                                        user.dy = 0;
-                                        user.can_jump = !Key.isDown(Key.UP);
-                                        user.y = obj.y - constants_1.Constants.PLAYER_H + obj.top;
+                            } else if (obj instanceof entities_1.PlayerBlock) {
+                                if (obj.team === _this.state.user_team) {
+                                    user.y -= user.dy;
+                                    if (!_this.checkCollision(user, obj)) {
+                                        user.y += user.dy;
+                                        if (user.dy > 0) {
+                                            user.dy = 0;
+                                            user.can_jump = !Key.isDown(Key.UP);
+                                            user.y = obj.y - constants_1.Constants.PLAYER_H + obj.top;
+                                        }
+                                    } else {
+                                        user.y += user.dy;
                                     }
-                                } else {
-                                    user.y += user.dy;
                                 }
                             } else if (obj instanceof entities_1.Flag) {
                                 if (obj.holding_id === null && obj.team !== _this.state.user_team) {
@@ -2148,22 +2150,16 @@ var Game = function () {
                                     _this.takeFlag(obj);
                                 }
                             } else {
-                                user.y -= user.dy;
-                                if (!_this.checkCollision(user, obj)) {
-                                    user.y += user.dy;
-                                    if (user.dy > 0) {
-                                        user.dy = 0;
-                                        user.can_jump = !Key.isDown(Key.UP);
-                                        user.y = obj.y - constants_1.Constants.PLAYER_H + obj.top;
-                                    } else {
-                                        user.dy = 0;
-                                        user.y = obj.y + obj.h - user.top - obj.bottom;
-                                    }
-                                    if (obj instanceof entities_1.Spike) {
-                                        _this.killPlayer();
-                                    }
+                                if (user.dy > 0) {
+                                    user.dy = 0;
+                                    user.can_jump = !Key.isDown(Key.UP);
+                                    user.y = obj.y - constants_1.Constants.PLAYER_H + obj.top;
                                 } else {
-                                    user.dy += user.dy;
+                                    user.dy = 0;
+                                    user.y = obj.y + obj.h - user.top - obj.bottom;
+                                }
+                                if (obj instanceof entities_1.Spike) {
+                                    _this.killPlayer();
                                 }
                             }
                         }
@@ -2192,7 +2188,7 @@ var Game = function () {
                     for (var _iterator3 = _this.state.level.collidables[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
                         var _obj = _step3.value;
 
-                        if (_this.checkCollision(user, _obj) && !(_obj instanceof entities_1.PlayerBlock && _obj.team === user.team)) {
+                        if (_this.checkCollision(user, _obj) && !(_obj instanceof entities_1.PlayerBlock)) {
                             if (_obj instanceof entities_1.ScoringArea) {
                                 if (_obj.team === _this.state.user_team) {
                                     var _iteratorNormalCompletion5 = true;
@@ -2228,16 +2224,10 @@ var Game = function () {
                                     _this.takeFlag(_obj);
                                 }
                             } else {
-                                user.x -= user.dx;
-                                if (!_this.checkCollision(user, _obj)) {
-                                    user.x += user.dx;
-                                    if (user.dx > 0) {
-                                        user.x = _obj.x - constants_1.Constants.PLAYER_W + user.right + _obj.left;
-                                    } else {
-                                        user.x = _obj.x + _obj.w - user.left - _obj.right;
-                                    }
+                                if (user.dx > 0) {
+                                    user.x = _obj.x - constants_1.Constants.PLAYER_W + user.right + _obj.left;
                                 } else {
-                                    user.x += user.dx;
+                                    user.x = _obj.x + _obj.w - user.left - _obj.right;
                                 }
                             }
                         }

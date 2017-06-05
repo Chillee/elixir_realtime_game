@@ -129,18 +129,20 @@ export class Game {
                 }
               }
             }
-          } else if (obj instanceof PlayerBlock && obj.team === user.team) {
-            user.y -= user.dy;
-            if (!this.checkCollision(user, obj)) {
-              user.y += user.dy;
-              if (user.dy > 0) {
-                user.dy = 0;
-                user.can_jump = !Key.isDown(Key.UP);
-                user.y = obj.y - Constants.PLAYER_H + obj.top;
+          } else if (obj instanceof PlayerBlock) {
+            if (obj.team === this.state.user_team) {
+              user.y -= user.dy;
+              if (!this.checkCollision(user, obj)) {
+                user.y += user.dy;
+                if (user.dy > 0) {
+                  user.dy = 0;
+                  user.can_jump = !Key.isDown(Key.UP);
+                  user.y = obj.y - Constants.PLAYER_H + obj.top;
+                }
               }
-            }
-            else {
-              user.y += user.dy;
+              else {
+                user.y += user.dy;
+              }
             }
           } else if (obj instanceof Flag) {
             if (obj.holding_id === null && obj.team !== this.state.user_team) {
@@ -148,30 +150,23 @@ export class Game {
               this.takeFlag(obj);
             }
           } else {
-            user.y -= user.dy;
-            if (!this.checkCollision(user, obj)) {
-              user.y += user.dy;
-              if (user.dy > 0) {
-                user.dy = 0;
-                user.can_jump = !Key.isDown(Key.UP);
-                user.y = obj.y - Constants.PLAYER_H + obj.top;
-              } else {
-                user.dy = 0;
-                user.y = obj.y + obj.h - user.top - obj.bottom;
-              }
-              if (obj instanceof Spike) {
-                this.killPlayer();
-              }
+            if (user.dy > 0) {
+              user.dy = 0;
+              user.can_jump = !Key.isDown(Key.UP);
+              user.y = obj.y - Constants.PLAYER_H + obj.top;
+            } else {
+              user.dy = 0;
+              user.y = obj.y + obj.h - user.top - obj.bottom;
             }
-            else {
-              user.dy += user.dy;
+            if (obj instanceof Spike) {
+              this.killPlayer();
             }
           }
         }
       }
       user.x += user.dx;
       for (const obj of this.state.level.collidables) {
-        if (this.checkCollision(user, obj) && !(obj instanceof PlayerBlock && obj.team === user.team)) {
+        if (this.checkCollision(user, obj) && !(obj instanceof PlayerBlock)) {
           if (obj instanceof ScoringArea) {
             if (obj.team === this.state.user_team) {
               for (const flag of this.state.flags) {
@@ -186,18 +181,11 @@ export class Game {
               this.takeFlag(obj);
             }
           } else {
-            user.x -= user.dx;
-            if (!this.checkCollision(user, obj)) {
-              user.x += user.dx;
-              if (user.dx > 0) {
-                user.x = obj.x - Constants.PLAYER_W + user.right + obj.left;
-              }
-              else {
-                user.x = obj.x + obj.w - user.left - obj.right;
-              }
+            if (user.dx > 0) {
+              user.x = obj.x - Constants.PLAYER_W + user.right + obj.left;
             }
             else {
-              user.x += user.dx;
+              user.x = obj.x + obj.w - user.left - obj.right;
             }
           }
         }
