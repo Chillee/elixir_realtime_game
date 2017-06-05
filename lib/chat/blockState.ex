@@ -27,8 +27,6 @@ defmodule Chat.BlockState do
     end
 
     def handle_cast({:remove_blocks, %{"block_ids" => block_ids}}, val) do
-        IO.inspect(val)
-        IO.inspect(block_ids)
         {:noreply, Enum.filter(val, (fn x -> !Enum.member?(block_ids, x["id"]) end))}
     end
 end
