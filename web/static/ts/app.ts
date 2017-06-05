@@ -78,7 +78,6 @@ class App {
     this.roomChan.on("remove_blocks", (data: {block_ids: Array<number>}) => {
       this.game.state.level.collidables = this.game.state.level.collidables.filter(x => 
           !(x instanceof PlayerBlock && data.block_ids.indexOf(x.id) !== -1));
-      console.log(data.block_ids);
     });
 
     this.roomChan.on("overview_data", (data : { flag_holder: Array<number | null>, score: Array<number> }) => {
