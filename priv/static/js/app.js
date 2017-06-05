@@ -1497,7 +1497,7 @@ var App = function () {
             this.game.state.roomChan = this.roomChan;
             var game = this.game;
             var c = game.canvas;
-            var sheet = game.spriteSheet;
+            var sheet = game_1.Game.spriteSheet;
             var gs = game.state;
             // Start the game loop
             game.run();
@@ -1534,9 +1534,32 @@ var App = function () {
                 _this2.game.state.level.collidables.push(new entities_1.PlayerBlock(data.x, data.y, data.id, data.team));
             });
             this.roomChan.on("remove_blocks", function (data) {
-                _this2.game.state.level.collidables = _this2.game.state.level.collidables.filter(function (x) {
-                    return !(x instanceof entities_1.PlayerBlock && data.block_ids.indexOf(x.id) !== -1);
-                });
+                var _iteratorNormalCompletion2 = true;
+                var _didIteratorError2 = false;
+                var _iteratorError2 = undefined;
+
+                try {
+                    for (var _iterator2 = _this2.game.state.level.collidables[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                        var block = _step2.value;
+
+                        if (block instanceof entities_1.PlayerBlock && data.block_ids.indexOf(block.id) !== -1) {
+                            block.id = block.id === 1 ? 0 : 1;
+                        }
+                    }
+                } catch (err) {
+                    _didIteratorError2 = true;
+                    _iteratorError2 = err;
+                } finally {
+                    try {
+                        if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                            _iterator2.return();
+                        }
+                    } finally {
+                        if (_didIteratorError2) {
+                            throw _iteratorError2;
+                        }
+                    }
+                }
             });
             this.roomChan.on("overview_data", function (data) {
                 for (var i = 0; i < constants_1.Constants.TEAMS; i++) {
@@ -1622,7 +1645,7 @@ var Constants = function Constants() {
 
 Constants.TEAMS = 2;
 Constants.TEAM_NAMES = ["Blue", "Red"];
-Constants.DESTROY_RADIUS = 128;
+Constants.DESTROY_RADIUS = 64;
 Constants.PLAYER_W = 32;
 Constants.PLAYER_H = 32;
 Constants.W = 640;

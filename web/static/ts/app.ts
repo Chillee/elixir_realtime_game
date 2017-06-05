@@ -38,7 +38,7 @@ class App {
     this.game.state.roomChan = this.roomChan;
     const game = this.game;
     const c = game.canvas;
-    const sheet = game.spriteSheet;
+    const sheet = Game.spriteSheet;
     const gs = game.state;
 
     // Start the game loop
@@ -76,8 +76,11 @@ class App {
     });
 
     this.roomChan.on("remove_blocks", (data: {block_ids: Array<number>}) => {
-      this.game.state.level.collidables = this.game.state.level.collidables.filter(x => 
-          !(x instanceof PlayerBlock && data.block_ids.indexOf(x.id) !== -1));
+      for (let block of this.game.state.level.collidables) {
+        if (block instanceof PlayerBlock && data.block_ids.indexOf(block.id) !== -1) {
+          block.id = (block.id === 1) ? 0 : 1;
+        }
+      }
     });
 
     this.roomChan.on("overview_data", (data : { flag_holder: Array<number | null>, score: Array<number> }) => {
