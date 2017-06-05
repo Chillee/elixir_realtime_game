@@ -27,6 +27,6 @@ defmodule Chat.BlockState do
     end
 
     def handle_cast({:remove_blocks, %{"block_ids" => block_ids}}, val) do
-        {:noreply, Enum.map(val, (fn x -> if x === 1 do 0 else 1))}
+        {:noreply, Enum.map(val, (fn x -> if x === 1 do 0 else 1 end end))}
     end
 end
