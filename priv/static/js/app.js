@@ -1923,11 +1923,11 @@ var Level = function () {
                             _this.addSpike(x * 32, y * 32);
                         }
                         if (r === 255 && g === 0 && b === 255) {
-                            _this.addScoringArea(x * 32, y * 32, 0);
+                            //this.addScoringArea(x * 32, y * 32, 0);
                             gs.flags[0] = _this.addFlag(x * 32, y * 32, 0);
                         }
                         if (r === 0 && g === 0 && b === 255) {
-                            _this.addScoringArea(x * 32, y * 32, 1);
+                            //this.addScoringArea(x * 32, y * 32, 1);
                             gs.flags[1] = _this.addFlag(x * 32, y * 32, 1);
                         }
                         if (r === 0 && g === 0 && b === 128) {
