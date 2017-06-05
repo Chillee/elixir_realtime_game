@@ -1643,100 +1643,194 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var constants_1 = require("./constants");
+var camera_1 = require("./camera");
+var game_1 = require("./game");
 
-var Block = function Block(x, y) {
-    _classCallCheck(this, Block);
+var Block = function () {
+    function Block(x, y) {
+        _classCallCheck(this, Block);
 
-    this.x = 0;
-    this.y = 0;
-    this.w = constants_1.Constants.PLAYER_W;
-    this.h = constants_1.Constants.PLAYER_H;
-    this.left = 0;
-    this.right = 0;
-    this.top = 0;
-    this.bottom = 0;
-    this.x = x;
-    this.y = y;
-};
+        this.x = 0;
+        this.y = 0;
+        this.w = constants_1.Constants.PLAYER_W;
+        this.h = constants_1.Constants.PLAYER_H;
+        this.left = 0;
+        this.right = 0;
+        this.top = 0;
+        this.bottom = 0;
+        this.x = x;
+        this.y = y;
+    }
+
+    _createClass(Block, [{
+        key: "draw",
+        value: function draw(ctx) {
+            ctx.fillRect(this.x - camera_1.Camera.x, this.y - camera_1.Camera.y, this.w, this.h);
+        }
+    }]);
+
+    return Block;
+}();
 
 exports.Block = Block;
 
-var PlayerBlock = function PlayerBlock(x, y, id, team) {
-    _classCallCheck(this, PlayerBlock);
+var PlayerBlock = function () {
+    function PlayerBlock(x, y, id, team) {
+        _classCallCheck(this, PlayerBlock);
 
-    this.x = 0;
-    this.y = 0;
-    this.w = constants_1.Constants.PLAYER_W;
-    this.h = constants_1.Constants.PLAYER_H;
-    this.left = 0;
-    this.right = 0;
-    this.top = 0;
-    this.bottom = 0;
-    this.id = 0;
-    this.team = 0;
-    this.x = x;
-    this.y = y;
-    this.id = id;
-    this.team = team;
-};
+        this.x = 0;
+        this.y = 0;
+        this.w = constants_1.Constants.PLAYER_W;
+        this.h = constants_1.Constants.PLAYER_H;
+        this.left = 0;
+        this.right = 0;
+        this.top = 0;
+        this.bottom = 0;
+        this.id = 0;
+        this.team = 0;
+        this.x = x;
+        this.y = y;
+        this.id = id;
+        this.team = team;
+    }
+
+    _createClass(PlayerBlock, [{
+        key: "draw",
+        value: function draw(ctx) {
+            ctx.drawImage(game_1.Game.spriteSheet, constants_1.Constants.PLAYER_W * (5 + this.team), 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, this.x - camera_1.Camera.x, this.y - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
+        }
+    }]);
+
+    return PlayerBlock;
+}();
 
 exports.PlayerBlock = PlayerBlock;
 
-var Flag = function Flag(x, y, team) {
-    _classCallCheck(this, Flag);
+var Flag = function () {
+    function Flag(x, y, team) {
+        _classCallCheck(this, Flag);
 
-    this.x = 0;
-    this.y = 0;
-    this.w = constants_1.Constants.PLAYER_W;
-    this.h = constants_1.Constants.PLAYER_H;
-    this.left = 6;
-    this.right = 6;
-    this.top = 13;
-    this.bottom = 0;
-    this.team = 0;
-    this.holding_id = null; // if it's null, nobody has it
-    this.x = x;
-    this.y = y;
-    this.team = team;
-};
+        this.x = 0;
+        this.y = 0;
+        this.w = constants_1.Constants.PLAYER_W;
+        this.h = constants_1.Constants.PLAYER_H;
+        this.left = 6;
+        this.right = 6;
+        this.top = 13;
+        this.bottom = 0;
+        this.team = 0;
+        this.holding_id = null; // if it's null, nobody has it
+        this.x = x;
+        this.y = y;
+        this.team = team;
+    }
+
+    _createClass(Flag, [{
+        key: "draw",
+        value: function draw(ctx) {
+            if (this.holding_id === null) {
+                ctx.drawImage(game_1.Game.spriteSheet, constants_1.Constants.PLAYER_W * (2 + this.team), 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, this.x - camera_1.Camera.x, this.y - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
+            }
+        }
+    }]);
+
+    return Flag;
+}();
 
 exports.Flag = Flag;
 
-var ScoringArea = function ScoringArea(x, y, team) {
-    _classCallCheck(this, ScoringArea);
+var ScoringArea = function () {
+    function ScoringArea(x, y, team) {
+        _classCallCheck(this, ScoringArea);
 
-    this.x = 0;
-    this.y = 0;
-    this.w = constants_1.Constants.PLAYER_W;
-    this.h = constants_1.Constants.PLAYER_H;
-    this.left = 0;
-    this.right = 0;
-    this.top = 0;
-    this.bottom = 0;
-    this.team = 0;
-    this.x = x;
-    this.y = y;
-    this.team = team;
-};
+        this.x = 0;
+        this.y = 0;
+        this.w = constants_1.Constants.PLAYER_W;
+        this.h = constants_1.Constants.PLAYER_H;
+        this.left = 0;
+        this.right = 0;
+        this.top = 0;
+        this.bottom = 0;
+        this.team = 0;
+        this.x = x;
+        this.y = y;
+        this.team = team;
+    }
+
+    _createClass(ScoringArea, [{
+        key: "draw",
+        value: function draw(ctx) {
+            ctx.drawImage(game_1.Game.spriteSheet, constants_1.Constants.PLAYER_W * (5 + this.team), constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, this.x - camera_1.Camera.x, this.y - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
+        }
+    }]);
+
+    return ScoringArea;
+}();
 
 exports.ScoringArea = ScoringArea;
 
-var Spike = function Spike(x, y) {
-    _classCallCheck(this, Spike);
+var Spike = function () {
+    function Spike(x, y) {
+        _classCallCheck(this, Spike);
 
-    this.x = 0;
-    this.y = 0;
-    this.w = constants_1.Constants.PLAYER_W;
-    this.h = constants_1.Constants.PLAYER_H;
-    this.left = 0;
-    this.right = 0;
-    this.top = constants_1.Constants.PLAYER_H / 2;
-    this.bottom = 0;
-    this.x = x;
-    this.y = y;
-};
+        this.x = 0;
+        this.y = 0;
+        this.w = constants_1.Constants.PLAYER_W;
+        this.h = constants_1.Constants.PLAYER_H;
+        this.left = 0;
+        this.right = 0;
+        this.top = constants_1.Constants.PLAYER_H / 2;
+        this.bottom = 0;
+        this.x = x;
+        this.y = y;
+    }
+
+    _createClass(Spike, [{
+        key: "draw",
+        value: function draw(ctx) {
+            ctx.drawImage(game_1.Game.spriteSheet, constants_1.Constants.PLAYER_W * 4, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, this.x - camera_1.Camera.x, this.y - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
+        }
+    }]);
+
+    return Spike;
+}();
 
 exports.Spike = Spike;
+
+var Explosion = function () {
+    function Explosion(x, y) {
+        _classCallCheck(this, Explosion);
+
+        this.x = 0;
+        this.y = 0;
+        this.w = constants_1.Constants.PLAYER_W * 2;
+        this.h = constants_1.Constants.PLAYER_W * 2;
+        this.startTick = -1;
+        this.dead = false;
+        this.x = x;
+        this.y = y;
+    }
+
+    _createClass(Explosion, [{
+        key: "draw",
+        value: function draw(tick, ctx) {
+            if (this.startTick === -1) {
+                this.startTick = tick;
+            }
+            var frame = Math.floor((tick - this.startTick) / 2);
+            if (frame > 9) {
+                this.dead = true;
+            }
+            if (!this.dead) {
+                ctx.drawImage(game_1.Game.spriteSheet, this.w * frame, constants_1.Constants.PLAYER_H * 4, this.w, this.h, this.x - camera_1.Camera.x - this.w / 2, this.y - camera_1.Camera.y - this.h / 2, this.w, this.h);
+            }
+        }
+    }]);
+
+    return Explosion;
+}();
+
+exports.Explosion = Explosion;
 
 var Level = function () {
     function Level() {
@@ -1771,6 +1865,7 @@ var Level = function () {
             var _this = this;
 
             this.collidables = new Array();
+            this.explosions = new Array();
             var levelImage = new Image();
             levelImage.src = "images/level.png";
             levelImage.onload = function () {
@@ -1867,8 +1962,8 @@ var Game = function () {
         _classCallCheck(this, Game);
 
         this.canvas = document.getElementById("gameCanvas");
-        this.spriteSheet = new Image();
-        this.spriteSheet.src = "images/sheet.png";
+        Game.spriteSheet = new Image();
+        Game.spriteSheet.src = "images/sheet.png";
         this.state = new state_1.GameState(id, team);
     }
 
@@ -1912,6 +2007,7 @@ var Game = function () {
     }, {
         key: "sudoku",
         value: function sudoku() {
+            this.state.level.explosions.push(new entities_1.Explosion(this.state.userState.x + constants_1.Constants.PLAYER_W / 2, this.state.userState.y + constants_1.Constants.PLAYER_H / 2));
             var ids = new Array();
             var _iteratorNormalCompletion = true;
             var _didIteratorError = false;
@@ -2154,15 +2250,7 @@ var Game = function () {
                     for (var _iterator6 = _this.state.level.collidables[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
                         var obj = _step6.value;
 
-                        if (obj instanceof entities_1.PlayerBlock) ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * (5 + obj.team), 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, obj.x - camera_1.Camera.x, obj.y - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
-                        if (obj instanceof entities_1.Block) ctx.fillRect(obj.x - camera_1.Camera.x, obj.y - camera_1.Camera.y, obj.w, obj.h);
-                        if (obj instanceof entities_1.Spike) ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * 4, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, obj.x - camera_1.Camera.x, obj.y - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
-                        if (obj instanceof entities_1.Flag && obj.holding_id == null) {
-                            ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * (2 + obj.team), 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, obj.x - camera_1.Camera.x, obj.y - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
-                        }
-                        if (obj instanceof entities_1.ScoringArea) {
-                            ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * (5 + obj.team), constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, obj.x - camera_1.Camera.x, obj.y - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
-                        }
+                        obj.draw(ctx);
                     }
                 } catch (err) {
                     _didIteratorError6 = true;
@@ -2183,18 +2271,18 @@ var Game = function () {
                     ctx.translate(Math.floor(user.x) + constants_1.Constants.PLAYER_W - camera_1.Camera.x, Math.floor(user.y) - camera_1.Camera.y);
                     ctx.scale(-1, 1);
                     if (user.dx != 0) {
-                        user.frame = Math.floor(user.tick / 5) % 4;
-                        ctx.drawImage(_this.spriteSheet, user.frame * constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H * (2 + user.team), constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, 0, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
+                        user.frame = Math.floor(_this.state.tick / 5) % 4;
+                        ctx.drawImage(Game.spriteSheet, user.frame * constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H * (2 + user.team), constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, 0, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                     } else {
-                        ctx.drawImage(_this.spriteSheet, 0, constants_1.Constants.PLAYER_H * user.team, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, 0, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
+                        ctx.drawImage(Game.spriteSheet, 0, constants_1.Constants.PLAYER_H * user.team, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, 0, 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                     }
                     ctx.setTransform(1, 0, 0, 1, 0, 0);
                 } else {
                     if (user.dx != 0) {
-                        user.frame = Math.floor(user.tick / 5) % 4;
-                        ctx.drawImage(_this.spriteSheet, user.frame * constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H * (2 + user.team), constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, Math.floor(user.x) - camera_1.Camera.x, Math.floor(user.y) - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
+                        user.frame = Math.floor(_this.state.tick / 5) % 4;
+                        ctx.drawImage(Game.spriteSheet, user.frame * constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H * (2 + user.team), constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, Math.floor(user.x) - camera_1.Camera.x, Math.floor(user.y) - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                     } else {
-                        ctx.drawImage(_this.spriteSheet, 0, constants_1.Constants.PLAYER_H * user.team, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, Math.floor(user.x) - camera_1.Camera.x, Math.floor(user.y) - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
+                        ctx.drawImage(Game.spriteSheet, 0, constants_1.Constants.PLAYER_H * user.team, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, Math.floor(user.x) - camera_1.Camera.x, Math.floor(user.y) - camera_1.Camera.y, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                     }
                 }
                 var _iteratorNormalCompletion7 = true;
@@ -2206,7 +2294,7 @@ var Game = function () {
                         var flag = _step7.value;
 
                         if (flag.holding_id === _this.state.user_id) {
-                            ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * (2 + flag.team), 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, Math.floor(user.x) - camera_1.Camera.x, Math.floor(user.y) - camera_1.Camera.y - constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
+                            ctx.drawImage(Game.spriteSheet, constants_1.Constants.PLAYER_W * (2 + flag.team), 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, Math.floor(user.x) - camera_1.Camera.x, Math.floor(user.y) - camera_1.Camera.y - constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                         }
                     }
                 } catch (err) {
@@ -2231,29 +2319,29 @@ var Game = function () {
                 try {
                     for (var _iterator8 = _this.state.nonUserStates[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
                         var player = _step8.value;
-                        var _iteratorNormalCompletion9 = true;
-                        var _didIteratorError9 = false;
-                        var _iteratorError9 = undefined;
+                        var _iteratorNormalCompletion10 = true;
+                        var _didIteratorError10 = false;
+                        var _iteratorError10 = undefined;
 
                         try {
-                            for (var _iterator9 = _this.state.flags[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-                                var _flag2 = _step9.value;
+                            for (var _iterator10 = _this.state.flags[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+                                var _flag2 = _step10.value;
 
                                 if (_flag2.holding_id === player.id) {
-                                    ctx.drawImage(_this.spriteSheet, constants_1.Constants.PLAYER_W * (2 + _flag2.team), 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, Math.floor(player.x) - camera_1.Camera.x, Math.floor(player.y) - camera_1.Camera.y - constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
+                                    ctx.drawImage(Game.spriteSheet, constants_1.Constants.PLAYER_W * (2 + _flag2.team), 0, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H, Math.floor(player.x) - camera_1.Camera.x, Math.floor(player.y) - camera_1.Camera.y - constants_1.Constants.PLAYER_H, constants_1.Constants.PLAYER_W, constants_1.Constants.PLAYER_H);
                                 }
                             }
                         } catch (err) {
-                            _didIteratorError9 = true;
-                            _iteratorError9 = err;
+                            _didIteratorError10 = true;
+                            _iteratorError10 = err;
                         } finally {
                             try {
-                                if (!_iteratorNormalCompletion9 && _iterator9.return) {
-                                    _iterator9.return();
+                                if (!_iteratorNormalCompletion10 && _iterator10.return) {
+                                    _iterator10.return();
                                 }
                             } finally {
-                                if (_didIteratorError9) {
-                                    throw _iteratorError9;
+                                if (_didIteratorError10) {
+                                    throw _iteratorError10;
                                 }
                             }
                         }
@@ -2271,6 +2359,31 @@ var Game = function () {
                     } finally {
                         if (_didIteratorError8) {
                             throw _iteratorError8;
+                        }
+                    }
+                }
+
+                var _iteratorNormalCompletion9 = true;
+                var _didIteratorError9 = false;
+                var _iteratorError9 = undefined;
+
+                try {
+                    for (var _iterator9 = _this.state.level.explosions[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+                        var exp = _step9.value;
+
+                        exp.draw(_this.state.tick, ctx);
+                    }
+                } catch (err) {
+                    _didIteratorError9 = true;
+                    _iteratorError9 = err;
+                } finally {
+                    try {
+                        if (!_iteratorNormalCompletion9 && _iterator9.return) {
+                            _iterator9.return();
+                        }
+                    } finally {
+                        if (_didIteratorError9) {
+                            throw _iteratorError9;
                         }
                     }
                 }
@@ -2336,7 +2449,7 @@ var Game = function () {
                 var v = 4;
                 var gs = _this.state;
                 var user = gs.userState;
-                user.tick += 1;
+                _this.state.tick++;
                 if (Key.isDown(Key.UP) && user.can_jump) {
                     user.dy = -jump_v;
                     user.can_jump = false;
@@ -2356,6 +2469,9 @@ var Game = function () {
                 collisions();
                 check_bounds(user);
                 user.dy += 0.7;
+                _this.state.level.explosions = _this.state.level.explosions.filter(function (x) {
+                    return !x.dead;
+                });
                 if (_this.state.deathAnimFrame === 0) {
                     camera_1.Camera.updateTarget(user);
                 } else {
@@ -2404,7 +2520,6 @@ var PlayerState = function PlayerState(x, y, id, team) {
     this.dx = 0;
     this.dy = 0;
     this.can_jump = false;
-    this.tick = 0;
     this.frame = 0;
     this.id = 0;
     this.team = 0;
@@ -2427,6 +2542,7 @@ var GameState = function () {
         this.user_team = 0;
         this.user_nickname = "horsey";
         this.fps = 60;
+        this.tick = 0;
         this.playerStates = new Array(new PlayerState(0, 0, id, team));
         this.user_id = id;
         this.user_team = team;

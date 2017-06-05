@@ -1,4 +1,4 @@
-import { Level, Collidable, PlayerBlock, Spike, Block, Flag, ScoringArea } from "./entities";
+import { Level, Collidable, PlayerBlock, Spike, Block, Flag, ScoringArea, Explosion } from "./entities";
 import { GameState, PlayerState } from "./state";
 import { Constants } from "./constants";
 import { Channel } from "phoenix";
@@ -22,13 +22,13 @@ export class PlayerData {
 
 export class Game {
   canvas: HTMLCanvasElement;
-  spriteSheet: HTMLImageElement;
+  static spriteSheet: HTMLImageElement;
   state: GameState;
 
   constructor(id: number, team: number) {
     this.canvas = <HTMLCanvasElement>document.getElementById("gameCanvas");
-    this.spriteSheet = new Image();
-    this.spriteSheet.src = "images/sheet.png";
+    Game.spriteSheet = new Image();
+    Game.spriteSheet.src = "images/sheet.png";
     this.state = new GameState(id, team);
   }
 
@@ -68,6 +68,8 @@ export class Game {
   }
 
   private sudoku() {
+    this.state.level.explosions.push(new Explosion(this.state.userState.x + Constants.PLAYER_W / 2, this.state.userState.y + Constants.PLAYER_H / 2));
+
     let ids: Array<number> = new Array();
     for (const obj of this.state.level.collidables) {
       if (obj instanceof PlayerBlock && obj.team !== this.state.user_team) {
@@ -85,7 +87,7 @@ export class Game {
       this.state.user_nickname
     ));
     console.log("destroy_block_ids/push", ids);
-    this.state.roomChan.push("remove_blocks", {block_ids: ids});
+    this.state.roomChan.push("remove_blocks", { block_ids: ids });
     this.teleportPlayer();
   }
 
@@ -211,60 +213,49 @@ export class Game {
       const user = this.state.userState;
 
       for (const obj of this.state.level.collidables) {
-        if (obj instanceof PlayerBlock)
-          ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * (5 + obj.team), 0, Constants.PLAYER_W, Constants.PLAYER_H,
-            obj.x - Camera.x, obj.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
-        if (obj instanceof Block)
-          ctx.fillRect(obj.x - Camera.x, obj.y - Camera.y, obj.w, obj.h);
-        if (obj instanceof Spike)
-          ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * 4, 0, Constants.PLAYER_W, Constants.PLAYER_H,
-            obj.x - Camera.x, obj.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
-        if (obj instanceof Flag && obj.holding_id == null) {
-          ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * (2 + obj.team), 0, Constants.PLAYER_W, Constants.PLAYER_H,
-            obj.x - Camera.x, obj.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
-        }
-        if (obj instanceof ScoringArea) {
-          ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * (5 + obj.team), Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H,
-            obj.x - Camera.x, obj.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
-        }
+        obj.draw(ctx);
       }
 
       if (user.x_dir === -1) {
         ctx.translate(Math.floor(user.x) + Constants.PLAYER_W - Camera.x, Math.floor(user.y) - Camera.y);
         ctx.scale(-1, 1);
         if (user.dx != 0) {
-          user.frame = Math.floor(user.tick / 5) % 4;
-          ctx.drawImage(this.spriteSheet, user.frame * Constants.PLAYER_W, Constants.PLAYER_H * (2 + user.team),
+          user.frame = Math.floor(this.state.tick / 5) % 4;
+          ctx.drawImage(Game.spriteSheet, user.frame * Constants.PLAYER_W, Constants.PLAYER_H * (2 + user.team),
             Constants.PLAYER_W, Constants.PLAYER_H, 0, 0,
             Constants.PLAYER_W, Constants.PLAYER_H);
         }
         else {
-          ctx.drawImage(this.spriteSheet, 0, Constants.PLAYER_H * user.team, Constants.PLAYER_W, Constants.PLAYER_H,
+          ctx.drawImage(Game.spriteSheet, 0, Constants.PLAYER_H * user.team, Constants.PLAYER_W, Constants.PLAYER_H,
             0, 0, Constants.PLAYER_W, Constants.PLAYER_H);
         }
         ctx.setTransform(1, 0, 0, 1, 0, 0);
       }
       else {
         if (user.dx != 0) {
-          user.frame = Math.floor(user.tick / 5) % 4;
-          ctx.drawImage(this.spriteSheet, user.frame * Constants.PLAYER_W, Constants.PLAYER_H * (2 + user.team), Constants.PLAYER_W, Constants.PLAYER_H, Math.floor(user.x) - Camera.x, Math.floor(user.y) - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
+          user.frame = Math.floor(this.state.tick / 5) % 4;
+          ctx.drawImage(Game.spriteSheet, user.frame * Constants.PLAYER_W, Constants.PLAYER_H * (2 + user.team), Constants.PLAYER_W, Constants.PLAYER_H, Math.floor(user.x) - Camera.x, Math.floor(user.y) - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
         }
         else {
-          ctx.drawImage(this.spriteSheet, 0, Constants.PLAYER_H * user.team, Constants.PLAYER_W, Constants.PLAYER_H, Math.floor(user.x) - Camera.x, Math.floor(user.y) - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
+          ctx.drawImage(Game.spriteSheet, 0, Constants.PLAYER_H * user.team, Constants.PLAYER_W, Constants.PLAYER_H, Math.floor(user.x) - Camera.x, Math.floor(user.y) - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
         }
       }
       for (const flag of this.state.flags) {
         if (flag.holding_id === this.state.user_id) {
-          ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * (2 + flag.team), 0, Constants.PLAYER_W, Constants.PLAYER_H, Math.floor(user.x) - Camera.x, Math.floor(user.y) - Camera.y - Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H);
+          ctx.drawImage(Game.spriteSheet, Constants.PLAYER_W * (2 + flag.team), 0, Constants.PLAYER_W, Constants.PLAYER_H, Math.floor(user.x) - Camera.x, Math.floor(user.y) - Camera.y - Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H);
         }
       }
       for (const player of this.state.nonUserStates) {
         for (const flag of this.state.flags) {
           if (flag.holding_id === player.id) {
-            ctx.drawImage(this.spriteSheet, Constants.PLAYER_W * (2 + flag.team), 0, Constants.PLAYER_W, Constants.PLAYER_H, Math.floor(player.x) - Camera.x, Math.floor(player.y) - Camera.y - Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H);
+            ctx.drawImage(Game.spriteSheet, Constants.PLAYER_W * (2 + flag.team), 0, Constants.PLAYER_W, Constants.PLAYER_H, Math.floor(player.x) - Camera.x, Math.floor(player.y) - Camera.y - Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H);
           }
         }
         ctx.fillRect(Math.floor(player.x) - Camera.x, Math.floor(player.y) - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
+      }
+
+      for (const exp of this.state.level.explosions) {
+        exp.draw(this.state.tick, ctx);
       }
 
       let scoreText = "";
@@ -340,7 +331,7 @@ export class Game {
       const v = 4;
       const gs = this.state;
       const user = gs.userState;
-      user.tick += 1;
+      this.state.tick++;
       if (Key.isDown(Key.UP) && user.can_jump) {
         user.dy = -jump_v;
         user.can_jump = false;
@@ -362,6 +353,8 @@ export class Game {
       collisions();
       check_bounds(user);
       user.dy += 0.7;
+
+      this.state.level.explosions = this.state.level.explosions.filter(x => !x.dead);
 
       if (this.state.deathAnimFrame === 0) {
         Camera.updateTarget(user);

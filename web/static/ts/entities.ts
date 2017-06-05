@@ -1,5 +1,7 @@
 import { Constants } from "./constants";
 import { GameState } from "./state";
+import { Camera } from "./camera";
+import { Game } from "./game";
 
 export interface Collidable {
   x: number;
@@ -10,6 +12,8 @@ export interface Collidable {
   right: number;
   top: number;
   bottom: number;
+
+  draw(ctx: CanvasRenderingContext2D): void;
 }
 
 export class Block implements Collidable {
@@ -25,6 +29,10 @@ export class Block implements Collidable {
   constructor(x: number, y: number) {
     this.x = x;
     this.y = y;
+  }
+
+  draw(ctx: CanvasRenderingContext2D) {
+    ctx.fillRect(this.x - Camera.x, this.y - Camera.y, this.w, this.h);
   }
 }
 
@@ -46,6 +54,10 @@ export class PlayerBlock implements Collidable {
     this.id = id;
     this.team = team;
   }
+
+  draw(ctx: CanvasRenderingContext2D) {
+    ctx.drawImage(Game.spriteSheet, Constants.PLAYER_W * (5 + this.team), 0, Constants.PLAYER_W, Constants.PLAYER_H, this.x - Camera.x, this.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
+  }
 }
 
 export class Flag implements Collidable {
@@ -65,6 +77,12 @@ export class Flag implements Collidable {
     this.y = y;
     this.team = team;
   }
+
+  draw (ctx: CanvasRenderingContext2D) {
+    if (this.holding_id === null) {
+      ctx.drawImage(Game.spriteSheet, Constants.PLAYER_W * (2 + this.team), 0, Constants.PLAYER_W, Constants.PLAYER_H, this.x - Camera.x, this.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
+    }
+  }
 }
 
 export class ScoringArea implements Collidable {
@@ -83,6 +101,10 @@ export class ScoringArea implements Collidable {
     this.y = y;
     this.team = team;
   }
+
+  draw (ctx: CanvasRenderingContext2D) {
+      ctx.drawImage(Game.spriteSheet, Constants.PLAYER_W * (5 + this.team), Constants.PLAYER_H, Constants.PLAYER_W, Constants.PLAYER_H, this.x - Camera.x, this.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
+  }
 }
 
 export class Spike implements Collidable {
@@ -99,12 +121,44 @@ export class Spike implements Collidable {
     this.x = x;
     this.y = y;
   }
+
+  draw (ctx: CanvasRenderingContext2D) {
+      ctx.drawImage(Game.spriteSheet, Constants.PLAYER_W * 4, 0, Constants.PLAYER_W, Constants.PLAYER_H, this.x - Camera.x, this.y - Camera.y, Constants.PLAYER_W, Constants.PLAYER_H);
+  }
+}
+
+export class Explosion {
+  x = 0;
+  y = 0;
+  readonly w = Constants.PLAYER_W * 2;
+  readonly h = Constants.PLAYER_W * 2;
+  startTick = -1;
+  dead = false;
+
+  constructor(x: number, y: number) { // (x, y) are centered in this case
+    this.x = x;
+    this.y = y;
+  }
+
+  draw (tick: number, ctx: CanvasRenderingContext2D) {
+    if (this.startTick === -1) {
+      this.startTick = tick;
+    }
+    let frame = Math.floor((tick - this.startTick) / 2);
+    if (frame > 9) {
+      this.dead = true;
+    }
+    if (!this.dead) {
+      ctx.drawImage(Game.spriteSheet, this.w * frame, Constants.PLAYER_H * 4, this.w, this.h, this.x - Camera.x - this.w / 2, this.y - Camera.y - this.h / 2, this.w, this.h);
+    }
+  }
 }
 
 export class Level {
   spawnX: number;
   spawnY: number;
   collidables: Array<Collidable>;
+  explosions: Array<Explosion>;
 
   addBlock(x: number, y: number) {
     this.collidables.push(new Block(x, y));
@@ -126,6 +180,7 @@ export class Level {
 
   create(gs: GameState) {
     this.collidables = new Array();
+    this.explosions = new Array();
 
     let levelImage = new Image();
     levelImage.src = "images/level.png";

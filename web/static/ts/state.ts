@@ -12,7 +12,6 @@ export class PlayerState {
   dx = 0;
   dy = 0;
   can_jump = false;
-  tick = 0;
   frame = 0;
   id = 0;
   team = 0;
@@ -35,6 +34,7 @@ export class GameState {
   user_nickname = "horsey";
   level: Level;
   fps = 60;
+  tick = 0;
   playerStates: Array<PlayerState>
 
   constructor(id: number, team: number) {
