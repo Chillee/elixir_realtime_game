@@ -1943,7 +1943,7 @@ var Game = function () {
                 }
             }
 
-            this.state.roomChan.push("sudoku", new PlayerData(this.state.userState.x, this.state.userState.y, this.state.user_id, this.state.user_team, this.state.user_nickname));
+            this.state.roomChan.push("sudoku", new PlayerData(Math.floor(this.state.userState.x), Math.floor(this.state.userState.y), this.state.user_id, this.state.user_team, this.state.user_nickname));
             console.log("destroy_block_ids/push", ids);
             this.state.roomChan.push("remove_blocks", { block_ids: ids });
             this.teleportPlayer();
@@ -1951,7 +1951,7 @@ var Game = function () {
     }, {
         key: "killPlayer",
         value: function killPlayer() {
-            this.state.roomChan.push("death", new PlayerData(this.state.userState.x, this.state.userState.y, this.state.user_id, this.state.user_team, this.state.user_nickname));
+            this.state.roomChan.push("death", new PlayerData(Math.floor(this.state.userState.x), Math.floor(this.state.userState.y), this.state.user_id, this.state.user_team, this.state.user_nickname));
             this.teleportPlayer();
         }
     }, {
@@ -2030,16 +2030,22 @@ var Game = function () {
                                     _this.takeFlag(obj);
                                 }
                             } else {
-                                if (user.dy > 0) {
-                                    user.dy = 0;
-                                    user.can_jump = !Key.isDown(Key.UP);
-                                    user.y = obj.y - constants_1.Constants.PLAYER_H + obj.top;
+                                user.y -= user.dy;
+                                if (!_this.checkCollision(user, obj)) {
+                                    user.y += user.dy;
+                                    if (user.dy > 0) {
+                                        user.dy = 0;
+                                        user.can_jump = !Key.isDown(Key.UP);
+                                        user.y = obj.y - constants_1.Constants.PLAYER_H + obj.top;
+                                    } else {
+                                        user.dy = 0;
+                                        user.y = obj.y + obj.h - user.top - obj.bottom;
+                                    }
+                                    if (obj instanceof entities_1.Spike) {
+                                        _this.killPlayer();
+                                    }
                                 } else {
-                                    user.dy = 0;
-                                    user.y = obj.y + obj.h - user.top - obj.bottom;
-                                }
-                                if (obj instanceof entities_1.Spike) {
-                                    _this.killPlayer();
+                                    user.dy += user.dy;
                                 }
                             }
                         }
@@ -2104,10 +2110,16 @@ var Game = function () {
                                     _this.takeFlag(_obj);
                                 }
                             } else {
-                                if (user.dx > 0) {
-                                    user.x = _obj.x - constants_1.Constants.PLAYER_W + user.right + _obj.left;
+                                user.x -= user.dx;
+                                if (!_this.checkCollision(user, _obj)) {
+                                    user.x += user.dx;
+                                    if (user.dx > 0) {
+                                        user.x = _obj.x - constants_1.Constants.PLAYER_W + user.right + _obj.left;
+                                    } else {
+                                        user.x = _obj.x + _obj.w - user.left - _obj.right;
+                                    }
                                 } else {
-                                    user.x = _obj.x + _obj.w - user.left - _obj.right;
+                                    user.x += user.dx;
                                 }
                             }
                         }
