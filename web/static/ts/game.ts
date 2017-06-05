@@ -78,8 +78,8 @@ export class Game {
       }
     }
     this.state.roomChan.push("sudoku", new PlayerData(
-      this.state.userState.x,
-      this.state.userState.y,
+      Math.floor(this.state.userState.x),
+      Math.floor(this.state.userState.y),
       this.state.user_id,
       this.state.user_team,
       this.state.user_nickname
@@ -91,8 +91,8 @@ export class Game {
 
   private killPlayer() {
     this.state.roomChan.push("death", new PlayerData(
-      this.state.userState.x,
-      this.state.userState.y,
+      Math.floor(this.state.userState.x),
+      Math.floor(this.state.userState.y),
       this.state.user_id,
       this.state.user_team,
       this.state.user_nickname
@@ -146,16 +146,23 @@ export class Game {
               this.takeFlag(obj);
             }
           } else {
-            if (user.dy > 0) {
-              user.dy = 0;
-              user.can_jump = !Key.isDown(Key.UP);
-              user.y = obj.y - Constants.PLAYER_H + obj.top;
-            } else {
-              user.dy = 0;
-              user.y = obj.y + obj.h - user.top - obj.bottom;
+            user.y -= user.dy;
+            if (!this.checkCollision(user, obj)) {
+              user.y += user.dy;
+              if (user.dy > 0) {
+                user.dy = 0;
+                user.can_jump = !Key.isDown(Key.UP);
+                user.y = obj.y - Constants.PLAYER_H + obj.top;
+              } else {
+                user.dy = 0;
+                user.y = obj.y + obj.h - user.top - obj.bottom;
+              }
+              if (obj instanceof Spike) {
+                this.killPlayer();
+              }
             }
-            if (obj instanceof Spike) {
-              this.killPlayer();
+            else {
+              user.dy += user.dy;
             }
           }
         }
@@ -177,11 +184,18 @@ export class Game {
               this.takeFlag(obj);
             }
           } else {
-            if (user.dx > 0) {
-              user.x = obj.x - Constants.PLAYER_W + user.right + obj.left;
+            user.x -= user.dx;
+            if (!this.checkCollision(user, obj)) {
+              user.x += user.dx;
+              if (user.dx > 0) {
+                user.x = obj.x - Constants.PLAYER_W + user.right + obj.left;
+              }
+              else {
+                user.x = obj.x + obj.w - user.left - obj.right;
+              }
             }
             else {
-              user.x = obj.x + obj.w - user.left - obj.right;
+              user.x += user.dx;
             }
           }
         }
