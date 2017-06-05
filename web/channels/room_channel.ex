@@ -21,13 +21,18 @@ defmodule Chat.RoomChannel do
 
   def handle_info({:after_join, msg}, socket) do
     push socket, "join", %{status: "connected"}
-    push socket, "init_data", %{blocks: Chat.BlockState.val(), id: :rand.uniform(100000), team: :rand.uniform(2) - 1}
+    id = :rand.uniform(100000)
+    team_data = Chat.OverViewState.val().players |> Enum.map &(&1.team)
+    team = Enum.min_by([0, 1], (fn (x) ->team_data |> Enum.filter(fn (y) -> x===y end) |> Enum.count end), (fn () -> 0 end))
+    push socket, "init_data", %{blocks: Chat.BlockState.val(), id: id, team: team}
+    Chat.OverViewState.add_player(%{id: id, team: team})
     {:noreply, socket}
   end
 
   def terminate(reason, socket) do
     Logger.debug"> leave #{inspect reason}"
     handle_in("sudoku", socket.assigns.player_data, socket)
+    Chat.OverViewState.remove_player(%{"id": socket.assigns.player_data["id"]})
     :ok 
   end
 

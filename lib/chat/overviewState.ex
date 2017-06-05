@@ -21,6 +21,10 @@ defmodule Chat.OverViewState do
         GenServer.cast(:overview_state, {:add_player, msg})
     end
 
+    def remove_player(msg) do
+        GenServer.cast(:overview_state, {:remove_player, msg})
+    end
+
 
     def val() do
         GenServer.call(:overview_state, :val)
@@ -45,6 +49,16 @@ defmodule Chat.OverViewState do
         %{flag_holder: flags, score: score} = data
         {:reply, :ok, %{data | flag_holder: List.replace_at(flags, flag_team, nil),
                         score: List.replace_at(score, user_team, (Enum.at score, user_team) + 1)}}
+    end
+
+    def handle_cast({:add_player, player}, data) do
+        %{players: players} = data
+        {:noreply, %{data | players: [player | players]}}
+    end
+
+    def handle_cast({:remove_player, player}, data) do
+        %{players: players} = data
+        {:noreply, %{data | players: Enum.filter(players, fn (x) -> x.id !== player.id end)}}
     end
 
     def handle_call(:val, _from, val) do
