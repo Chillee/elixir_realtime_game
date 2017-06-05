@@ -57,6 +57,7 @@ defmodule Chat.RoomChannel do
 
   def handle_in("remove_blocks", msg, socket) do
     Chat.BlockState.remove_blocks msg
+    IO.inspect(Chat.BlockState.val)
     broadcast! socket, "remove_blocks", msg
     {:reply, :ok, socket}
   end

@@ -1543,7 +1543,7 @@ var App = function () {
                         var block = _step2.value;
 
                         if (block instanceof entities_1.PlayerBlock && data.block_ids.indexOf(block.id) !== -1) {
-                            block.id = block.id === 1 ? 0 : 1;
+                            block.team = block.team === 1 ? 0 : 1;
                         }
                     }
                 } catch (err) {

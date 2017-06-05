@@ -78,7 +78,7 @@ class App {
     this.roomChan.on("remove_blocks", (data: {block_ids: Array<number>}) => {
       for (let block of this.game.state.level.collidables) {
         if (block instanceof PlayerBlock && data.block_ids.indexOf(block.id) !== -1) {
-          block.id = (block.id === 1) ? 0 : 1;
+          block.team = (block.team === 1) ? 0 : 1;
         }
       }
     });
