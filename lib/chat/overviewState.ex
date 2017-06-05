@@ -38,7 +38,7 @@ defmodule Chat.OverViewState do
 
     def handle_cast({:remove_flag, %{"id" => id}}, data) do
         %{flag_holder: flags} = data
-        {:noreply, %{data | flag_holder: Enum.map(flags, fn(x) -> if x=id do nil else x end end)}}
+        {:noreply, %{data | flag_holder: Enum.map(flags, fn(x) -> if x===id do nil else x end end)}}
     end
 
     def handle_call({:score_flag, %{"id" => id, "user_team" => user_team, "flag_team" => flag_team}}, _from, data) do
